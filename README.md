@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # p423-public-code
 Utility code, test suites, etc. for the compiler course.
 
@@ -32,3 +33,6 @@ test the final output assembly code; you need to use `compiler-tests`
 for that purpose. The usage of `compiler-tests` is quite similar to
 `interp-tests`.
 
+=======
+# p423
+>>>>>>> 3fabd711370f903cb06e832f74bb8ddebf4134c2
