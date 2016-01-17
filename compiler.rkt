@@ -43,14 +43,14 @@
 (define (print-x86 e) e)
 
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
-                    ("flatten",flatten,interp-C)
+                    ;; ("flatten",flatten,interp-C)
                     ;; ("select instructions",selection-instruction,interp-x86)
                     ;; ("assign homes",assign-homes,interp-x86)
                     ;; ("patch instructions",patch-instructions,interp-x86)
                     ;; ("print-x86",print-x86, #f)
                     ))
 
-(interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 3))
+(interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 6))
 (display "tests passed!") (newline)
 
 ;; (println `(Flatten Tests -----------------------------------))
@@ -61,12 +61,12 @@
 ;; ((flatten '()) `(program
 ;;                   (let ([a 24])
 ;;                     (let ([b a])
-;;                       b)))
+;;                       b))))
 
 ;; (println `(Uniquify Tests -----------------------------------))
-;; ((uniquify '()) `(program (let ([x 45]) (+ 3 x))))
-;; ((uniquify '()) `(program (let ([x 45])
+;; (uniquify `(program (let ([x 45]) (+ 3 x))))
+;; (uniquify `(program (let ([x 45])
 ;;                             (let ([y 20]) (+ y x)))))
-;; ((uniquify '()) `(program (let ([x (let ([y 30]) y)]) x)))
-;; ((uniquify '()) `(program 1))
-;; ((uniquify '()) `(program (let ([q (let ([z (let ([h 2]) 1)]) z)]) q)))
+;; (uniquify `(program (let ([x (let ([y 30]) y)]) x)))
+;; (uniquify `(program 1))
+;; (uniquify `(program (let ([q (let ([z (let ([h 2]) 1)]) z)]) q)))

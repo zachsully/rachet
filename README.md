@@ -1,4 +1,8 @@
-<<<<<<< HEAD
+# p424: Compilers
+### Team Members
+Zach Sullivan
+Gordon Lin
+
 # p423-public-code
 Utility code, test suites, etc. for the compiler course.
 

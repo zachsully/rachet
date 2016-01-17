@@ -1,1 +1,1 @@
-40
+(let ([x (let ([x (read)]) x)]) x)
