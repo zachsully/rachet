@@ -1,1 +1,1 @@
-(let ([x (let ([x (read)]) x)]) (let ([y (let ([z x]) z)]) x))
+(let ([x 41]) (+ x 1))

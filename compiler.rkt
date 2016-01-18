@@ -20,21 +20,34 @@
 
 (define uniquify (uniquify^ '()))
 
+(define (flatten e)
+  (match e
+    [(? integer?) (values e '())]
+    [(? symbol?)  (values e '())]
+    [`(let ([,x ,e]) ,body)
+     (let-values ([(val ass) (flatten e)])
+       (let-values ([(val^ ass^) (flatten body)])
+         (values val^ (cons ass^ (cons `(assign ,x ,e) ass)))))]
+    [`(program ,e)
+     (let-values ([(val ass) (flatten e)])
+       `(program ,(cons `(return ,val) ass)))]))
 
-(define (flatten^ alist)
-  (lambda (e)
-    (match e
-     [(? symbol?) (values alist (lookup e alist))]
-      [(? integer?) (values alist `(return e))]
-      [`(let ([,x ,e^]) ,body) (values alist x)]
-      [`(program ,e)
-        (values alist `(program ,((flatten^ alist) e)))]
-      [`(,op ,es ...)
-        (values alist `(,op ,@(map (flatten^ alist) es)))]
-      )))
-
-(define flatten (flatten^ '()))
-
+(println `(Flatten Tests -----------------------------------))
+(flatten `(program 42))
+(flatten `(program (let ([x 56]) x)))
+(flatten `(program (let ([x 56])
+                     (let ([y 42])
+                       y))))
+;; (flatten `(program `(let ([x 2]) x)))
+;; (flatten `(program 22))
+;; ((flatten '()) `(program (+ 52 (- 10))))
+;; ((flatten '()) `(program
+;;                   (let ([x (+ (- 10 11))])
+;;                     (+ x 41))))
+;; ((flatten '()) `(program
+;;                   (let ([a 24])
+;;                     (let ([b a])
+;;                       b))))
 
 
 (define (selection-instruction e) e)
@@ -52,16 +65,6 @@
 
 (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 6))
 (display "tests passed!") (newline)
-
-;; (println `(Flatten Tests -----------------------------------))
-;; ((flatten '()) `(program (+ 52 (- 10))))
-;; ((flatten '()) `(program
-;;                   (let ([x (+ (- 10 11))])
-;;                     (+ x 41))))
-;; ((flatten '()) `(program
-;;                   (let ([a 24])
-;;                     (let ([b a])
-;;                       b))))
 
 ;; (println `(Uniquify Tests -----------------------------------))
 ;; (uniquify `(program (let ([x 45]) (+ 3 x))))
