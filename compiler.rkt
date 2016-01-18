@@ -13,10 +13,11 @@
         (let ([e^^ ((uniquify^ alist) e^)])
           (let ([newsym (gensym)])
             `(let ([,newsym ,e^^]) ,((uniquify^ `((,x . ,newsym) . ,alist)) body))))]
+      [`(,op ,es ...)
+       `(,op ,@(map (uniquify^ alist) es))]
       [`(program ,e)
        `(program ,((uniquify^ alist) e))]
-      [`(,op ,es ...)
-       `(,op ,@(map (uniquify^ alist) es))])))
+      )))
 
 (define uniquify (uniquify^ '()))
 
@@ -27,10 +28,10 @@
     [`(let ([,x ,e]) ,body)
      (let-values ([(val ass) (flatten e)])
        (let-values ([(val^ ass^) (flatten body)])
-         (values val^ (cons ass^ (cons `(assign ,x ,e) ass)))))]
+         (values val^ (append ass (append ass^ `((assign ,x ,e)))))))]
     [`(program ,e)
      (let-values ([(val ass) (flatten e)])
-       `(program ,(cons `(return ,val) ass)))]))
+       `(program ,@(append ass `((return ,val)))))]))
 
 (println `(Flatten Tests -----------------------------------))
 (flatten `(program 42))
