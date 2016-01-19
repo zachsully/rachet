@@ -126,6 +126,16 @@
      (let ([intrs (selection-instruction^ es)])
        `(program ,vs ,@intrs))]))
 
+
+(define patch-instructions
+  (lambda (e)
+    (match e
+      [`(program ,es ...) (map (lambda (e^)
+                             (match e^
+                               [`(,op (stack ,var1) (stack ,var2)) `((movq (stack ,var1) (reg rax))
+                                                 (movq (reg rax) (stack ,var2)))]
+                               [`(,ex ...) ex])) es)])))
+
 (define (assign-homes e)
   (match e
    (`(program ,vars ,es ...)
@@ -164,7 +174,7 @@
              [shutdown (string-append
                         "\taddq\t$"
                         size
-                        ",\t%rsp\n\tpopq\t%rbp\n\tretq")]
+                        ",\t%rsp\n\tpopq\t%rbp\n\tretq\n")]
              [prog (foldr string-append "" (map print-x86^ es))])
          (string-append head init prog shutdown)))]))
 
@@ -184,12 +194,12 @@
 	  (string-append (number->string loc) "(%rbp)")]
 	 [`(reg ,r) "%rax"])) ;; this is dirty
 
-(flatten `(program (+ 52 (- 10))))
-(newline)
-(selection-instruction (flatten `(program (+ 52 (- 10)))))
-(newline)
-(assign-homes (selection-instruction (flatten `(program (+ 52 (- 10))))))
-;; (flatten `(program (let ([x 42]) (- 42))))
+;; (flatten `(program (+ 52 (- 10))))
+;; (newline)
+;; (selection-instruction (flatten `(program (+ 52 (- 10)))))
+;; (newline)
+;; (assign-homes (selection-instruction (flatten `(program (+ 52 (- 10))))))
+;; ;; (flatten `(program (let ([x 42]) (- 42))))
 (newline)
 (display
  (print-x86
@@ -199,17 +209,15 @@
 
 
 
-(define (patch-instructions e) e)
-
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("select instructions",selection-instruction,interp-x86)
                     ("assign homes",assign-homes,interp-x86)
-                    ;; ("patch instructions",patch-instructions,interp-x86)
-                    ;; ("print-x86",print-x86, #f)
+                    ("patch instructions",patch-instructions,interp-x86)
+                    ("print-x86",print-x86, #f)
                     ))
 
-;; (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 1))
+;; (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 2))
 ;; (display "tests passed!") (newline)
 
 ;; (display "Flatten Tests -----------------------------------")
