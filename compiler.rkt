@@ -62,7 +62,7 @@
       [`(let ([,x ,rhs]) ,body)
        (let-values ([(rhs_ex rhs_stmts) (flatten rhs)]
                     [(body_ex body_stmts) (flatten body)])
-         (values body_ex (append rhs_stmts body_stmts `((assign ,x ,rhs_ex)))))]    
+         (values body_ex (append rhs_stmts `((assign ,x ,rhs_ex)) body_stmts)))]
       [`(program ,e) (let-values ([(ex rhs) (flatten e)])
                        (let ([vars (unique-vars rhs)])
                          `(program ,vars ,@(append rhs `((return ,ex))))))]
@@ -82,13 +82,104 @@
     (cond
       [(null? e) '()]
       [else (match (car e)
-                   [`(assign ,e1 ,e2) (cons e1 (unique-vars (cdr e)))]
-                   )])))
+              [`(assign ,e1 ,e2) (cons e1 (unique-vars (cdr e)))])])))
 
+
+(define (selection-instruction^ e)
+  (cond
+   [(null? e) '()]
+   [else
+    (append
+     (match (car e)
+            [`(assign ,v (read)) `((callq read_int)
+                                   (movq (reg rax) (var ,v)))]
+            [`(assign ,v (- ,e1))
+             (if (symbol? e1)
+                 `((negq (var ,e1))
+                   (movq (var ,e1) (var ,v)))
+
+                 `((movq (int ,e1) (var ,v))
+                   (negq (var ,v))))]
+            [`(assign ,v (+ ,e1 ,e2))
+             (cond
+              [(and (symbol? e1)
+                    (symbol? e2))
+               `((addq (var ,e1) (var ,e2))
+                 (movq (var ,e2) (var ,v)))]
+              [(symbol? e1)
+               `((movq (var ,e1) (var ,v))
+                 (addq (int ,e2) (var ,v)))]
+              [(symbol? e2)
+               `((movq (var ,e2) (var ,v))
+                 (addq (int ,e1) (var ,v)))]
+              [else
+               `((movq (int ,e1) (var ,v))
+                 (addq (int ,e2) (var ,v)))])]
+            [`(assign ,v ,x)
+             `((movq (var ,x) (var ,v)))]
+            [`(return ,v) `((movq (var ,v) (reg rax)))])
+     (selection-instruction^ (cdr e)))]))
+
+(define (selection-instruction e)
+  (match e
+    [`(program ,vs ,es ...)
+     (let ([intrs (selection-instruction^ es)])
+       `(program ,vs ,@intrs))]))
+
+(define (assign-homes e)
+  (match e
+   (`(program ,vars ,es ...)
+    (let ([alist (cdr (foldl
+		       (lambda (x ac)
+			 (cons (+ 1 (car ac))
+				(cons (list x `(stack ,(- (* 8 (car ac)))))
+				      (cdr ac))))
+		       `(1)
+		       vars))])
+      `(program
+	,vars
+	,(map
+	  (lambda (e)
+	    (match e
+	     (`(,op ,var ...)
+	      `(,op ,@(map (lambda (v)
+			     (match v
+			      [`(var ,r) (let ([maybeV (assoc r alist)])
+					   (if maybeV
+					       (cadr maybeV)
+					       `(var ,r)))]
+			      [`(,a ,b) v]))
+			   var)))))
+	  es))))))
+
+(flatten `(program (+ 52 (- 10))))
+(newline)
+(selection-instruction (flatten `(program (+ 52 (- 10)))))
+(newline)
+(assign-homes (selection-instruction (flatten `(program (+ 52 (- 10))))))
+;; (flatten `(program (let ([x 42]) (- 42))))
+;; (selection-instruction (flatten `(program (let ([x 42]) (- 42)))))
+
+
+
+(define (patch-instructions e) e)
+(define (print-x86 e) e)
+
+(define r1-passes `(("uniquify",uniquify,interp-scheme)
+                    ("flatten",flatten,interp-C)
+                    ("select instructions",selection-instruction,interp-x86)
+                    ;; ("assign homes",assign-homes,interp-x86)
+                    ;; ("patch instructions",patch-instructions,interp-x86)
+                    ;; ("print-x86",print-x86, #f)
+                    ))
+
+;; (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 1))
+;; (display "tests passed!") (newline)
 
 ;; (display "Flatten Tests -----------------------------------")
 ;; (newline)
-;; (flatten `(program 42))
+;; (flatten `(program (let ([x 41]) (+ x 1))))
+;; (flatten `(program (let ([x 20]) (let ([y 22]) (+ x y)))))
 ;; (newline)
 ;; (flatten `(program (+ 1 2)))
 ;; (newline)
@@ -96,27 +187,11 @@
 ;;             (let ([x (+ (- 10) 11)])
 ;;               (+ x 41))))
 ;; (newline)
-;; (flatten `(program (+ (- 1) (- 2))))
 ;; (newline)
 ;; (flatten `(program (let ([x 56])
 ;;                      (let ([y x])
 ;;                        y))))
 
-(define (selection-instruction e) e)
-(define (assign-homes e) e)
-(define (patch-instructions e) e)
-(define (print-x86 e) e)
-
-(define r1-passes `(("uniquify",uniquify,interp-scheme)
-                    ("flatten",flatten,interp-C)
-                    ;; ("select instructions",selection-instruction,interp-x86)
-                    ;; ("assign homes",assign-homes,interp-x86)
-                    ;; ("patch instructions",patch-instructions,interp-x86)
-                    ;; ("print-x86",print-x86, #f)
-                    ))
-
-(interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 6))
-(display "tests passed!") (newline)
 
 ;; (println `(Uniquify Tests -----------------------------------))
 ;; (uniquify `(program (let ([x 45]) (+ 3 x))))
