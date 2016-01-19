@@ -130,27 +130,59 @@
   (match e
    (`(program ,vars ,es ...)
     (let ([alist (cdr (foldl
-		       (lambda (x ac)
-			 (cons (+ 1 (car ac))
-				(cons (list x `(stack ,(- (* 8 (car ac)))))
-				      (cdr ac))))
-		       `(1)
-		       vars))])
+                       (lambda (x ac)
+                         (cons (+ 1 (car ac))
+                        (cons (list x `(stack ,(- (* 8 (car ac)))))
+                                      (cdr ac))))
+                       `(1)
+                       vars))])
       `(program
-	,vars
-	,(map
-	  (lambda (e)
-	    (match e
-	     (`(,op ,var ...)
-	      `(,op ,@(map (lambda (v)
-			     (match v
-			      [`(var ,r) (let ([maybeV (assoc r alist)])
-					   (if maybeV
-					       (cadr maybeV)
-					       `(var ,r)))]
-			      [`(,a ,b) v]))
-			   var)))))
-	  es))))))
+        ,vars
+        ,@(map
+          (lambda (e)
+            (match e
+             (`(,op ,var ...)
+              `(,op ,@(map (lambda (v)
+                             (match v
+                              [`(var ,r) (let ([maybeV (assoc r alist)])
+                                           (if maybeV
+                                               (cadr maybeV)
+                                              `(var ,r)))]
+                              [`(,a ,b) v]))
+                           var)))))
+          es))))))
+
+(define (print-x86 e)
+  (match e
+   [`(program ,v ,es ...)
+     (let ([size (number->string (* 8 (length v)))])
+       (let ([head (string-append "\t.globl main\nmain:\n")]
+             [init (string-append
+                    "\tpushq\t%rbp\n\tmovq\t%rsp,\t%rbp\n\tsubq\t$"
+                    size
+                    ",\t%rsp\n")]
+             [shutdown (string-append
+                        "\taddq\t$"
+                        size
+                        ",\t%rsp\n\tpopq\t%rbp\n\tretq")]
+             [prog (foldr string-append "" (map print-x86^ es))])
+         (string-append head init prog shutdown)))]))
+
+(define (print-x86^ e)
+  (match e
+	 [`(movq ,a ,b)
+	  (string-append "\tmovq\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
+	 [`(addq ,a ,b)
+	  (string-append "\taddq\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
+	 [`(negq ,q)
+	  (string-append "\tnegq\t" (print-x86^ q) "\n")]
+	 [`(callq read_int)
+	  "\tcallq\tread_int\n"]
+	 [`(int ,i)
+	  (string-append "$" (number->string i))]
+	 [`(stack ,loc)
+	  (string-append (number->string loc) "(%rbp)")]
+	 [`(reg ,r) "%rax"])) ;; this is dirty
 
 (flatten `(program (+ 52 (- 10))))
 (newline)
@@ -158,17 +190,21 @@
 (newline)
 (assign-homes (selection-instruction (flatten `(program (+ 52 (- 10))))))
 ;; (flatten `(program (let ([x 42]) (- 42))))
-;; (selection-instruction (flatten `(program (let ([x 42]) (- 42)))))
+(newline)
+(display
+ (print-x86
+  (assign-homes
+   (selection-instruction
+    (flatten `(program (+ 52 (- 10))))))))
 
 
 
 (define (patch-instructions e) e)
-(define (print-x86 e) e)
 
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("select instructions",selection-instruction,interp-x86)
-                    ;; ("assign homes",assign-homes,interp-x86)
+                    ("assign homes",assign-homes,interp-x86)
                     ;; ("patch instructions",patch-instructions,interp-x86)
                     ;; ("print-x86",print-x86, #f)
                     ))
