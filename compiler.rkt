@@ -116,8 +116,13 @@
                `((movq (int ,e1) (var ,v))
                  (addq (int ,e2) (var ,v)))])]
             [`(assign ,v ,x)
-             `((movq (var ,x) (var ,v)))]
-            [`(return ,v) `((movq (var ,v) (reg rax)))])
+	     (cond
+	      [(symbol? x) `((movq (var ,x) (var ,v)))]
+	      [else `((movq (int ,x) (var ,v)))])]
+            [`(return ,v)
+	     (cond
+	      [(symbol? v) `((movq (var ,v) (reg rax)))]
+	      [else `((movq (int ,v) (reg rax)))])])
      (selection-instruction^ (cdr e)))]))
 
 (define (selection-instruction e)
@@ -126,15 +131,25 @@
      (let ([intrs (selection-instruction^ es)])
        `(program ,vs ,@intrs))]))
 
+(define (structure e)
+  (cond
+   [(symbol? e) `(var ,e)]
+   [else `(int ,e)]))
+
 
 (define patch-instructions
   (lambda (e)
     (match e
-      [`(program ,es ...) (map (lambda (e^)
+     [`(program ,v ,es ...)
+      `(program ,v ,@(foldr (lambda (e^ acc)
                              (match e^
-                               [`(,op (stack ,var1) (stack ,var2)) `((movq (stack ,var1) (reg rax))
-                                                 (movq (reg rax) (stack ,var2)))]
-                               [`(,ex ...) ex])) es)])))
+				    [`(,op (stack ,var1) (stack ,var2))
+				     (append `((movq (stack ,var1) (reg rax))
+					       (,op (reg rax) (stack ,var2)))
+					     acc)]
+				    [`(,ex ...) (cons e^ acc)]))
+			    '()
+			    es))])))
 
 (define (assign-homes e)
   (match e
@@ -158,7 +173,7 @@
                                            (if maybeV
                                                (cadr maybeV)
                                               `(var ,r)))]
-                              [`(,a ,b) v]))
+                              [`,_ v]))
                            var)))))
           es))))))
 
@@ -172,9 +187,13 @@
                     size
                     ",\t%rsp\n")]
              [shutdown (string-append
-                        "\taddq\t$"
-                        size
-                        ",\t%rsp\n\tpopq\t%rbp\n\tretq\n")]
+			(if (equal? "0" size)
+			   ""
+			   (string-append
+			    "\taddq\t$"
+			    size
+			    ",\t%rsp\n"))
+			"\tpopq\t%rbp\n\tretq\n")]
              [prog (foldr string-append "" (map print-x86^ es))])
          (string-append head init prog shutdown)))]))
 
@@ -194,20 +213,8 @@
 	  (string-append (number->string loc) "(%rbp)")]
 	 [`(reg ,r) "%rax"])) ;; this is dirty
 
-;; (flatten `(program (+ 52 (- 10))))
-;; (newline)
-;; (selection-instruction (flatten `(program (+ 52 (- 10)))))
-;; (newline)
-;; (assign-homes (selection-instruction (flatten `(program (+ 52 (- 10))))))
-;; ;; (flatten `(program (let ([x 42]) (- 42))))
-(newline)
-(display
- (print-x86
-  (assign-homes
-   (selection-instruction
-    (flatten `(program (+ 52 (- 10))))))))
-
-
+(let ([p `(program 42)])
+  (display (print-x86 (patch-instructions (assign-homes (selection-instruction (flatten (uniquify p))))))))
 
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
                     ("flatten",flatten,interp-C)
@@ -217,7 +224,8 @@
                     ("print-x86",print-x86, #f)
                     ))
 
-;; (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 2))
+;; (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 20))
+;; (compiler-tests "r1p-passes" r1-passes "r1" (range 1 2))
 ;; (display "tests passed!") (newline)
 
 ;; (display "Flatten Tests -----------------------------------")
@@ -244,3 +252,17 @@
 ;; (uniquify `(program (let ([x (let ([y 30]) y)]) x)))
 ;; (uniquify `(program 1))
 ;; (uniquify `(program (let ([q (let ([z (let ([h 2]) 1)]) z)]) q)))
+;; (flatten `(program (+ 52 (- 10))))
+;; (newline)
+;; (selection-instruction (flatten `(program (+ 52 (- 10)))))
+;; (newline)
+;; (assign-homes (selection-instruction (flatten `(program (+ 52 (- 10))))))
+;; ;; (flatten `(program (let ([x 42]) (- 42))))
+;; (newline)
+;; (display
+;;  (print-x86
+;;   (assign-homes
+;;    (selection-instruction
+;;     (flatten `(program (+ 52 (- 10))))))))
+
+
