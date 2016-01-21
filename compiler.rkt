@@ -193,6 +193,7 @@
 			    "\taddq\t$"
 			    size
 			    ",\t%rsp\n"))
+			"\tmovq\t%rax,\t%rdi\n\tcallq\tprint_int\n"
 			"\tpopq\t%rbp\n\tretq\n")]
              [prog (foldr string-append "" (map print-x86^ es))])
          (string-append head init prog shutdown)))]))
@@ -224,9 +225,9 @@
                     ("print-x86",print-x86, #f)
                     ))
 
-;; (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 20))
-;; (compiler-tests "r1p-passes" r1-passes "r1" (range 1 2))
-;; (display "tests passed!") (newline)
+(interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 20))
+(compiler-tests "r1p-passes" r1-passes "r1" (range 1 20))
+(display "tests passed!") (newline)
 
 ;; (display "Flatten Tests -----------------------------------")
 ;; (newline)
