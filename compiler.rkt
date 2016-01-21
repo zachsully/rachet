@@ -214,8 +214,6 @@
 	  (string-append (number->string loc) "(%rbp)")]
 	 [`(reg ,r) "%rax"])) ;; this is dirty
 
-(let ([p `(program 42)])
-  (display (print-x86 (patch-instructions (assign-homes (selection-instruction (flatten (uniquify p))))))))
 
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
                     ("flatten",flatten,interp-C)
@@ -228,42 +226,3 @@
 (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 20))
 (compiler-tests "r1p-passes" r1-passes "r1" (range 1 20))
 (display "tests passed!") (newline)
-
-;; (display "Flatten Tests -----------------------------------")
-;; (newline)
-;; (flatten `(program (let ([x 41]) (+ x 1))))
-;; (flatten `(program (let ([x 20]) (let ([y 22]) (+ x y)))))
-;; (newline)
-;; (flatten `(program (+ 1 2)))
-;; (newline)
-;; (flatten `(program
-;;             (let ([x (+ (- 10) 11)])
-;;               (+ x 41))))
-;; (newline)
-;; (newline)
-;; (flatten `(program (let ([x 56])
-;;                      (let ([y x])
-;;                        y))))
-
-
-;; (println `(Uniquify Tests -----------------------------------))
-;; (uniquify `(program (let ([x 45]) (+ 3 x))))
-;; (uniquify `(program (let ([x 45])
-;;                             (let ([y 20]) (+ y x)))))
-;; (uniquify `(program (let ([x (let ([y 30]) y)]) x)))
-;; (uniquify `(program 1))
-;; (uniquify `(program (let ([q (let ([z (let ([h 2]) 1)]) z)]) q)))
-;; (flatten `(program (+ 52 (- 10))))
-;; (newline)
-;; (selection-instruction (flatten `(program (+ 52 (- 10)))))
-;; (newline)
-;; (assign-homes (selection-instruction (flatten `(program (+ 52 (- 10))))))
-;; ;; (flatten `(program (let ([x 42]) (- 42))))
-;; (newline)
-;; (display
-;;  (print-x86
-;;   (assign-homes
-;;    (selection-instruction
-;;     (flatten `(program (+ 52 (- 10))))))))
-
-
