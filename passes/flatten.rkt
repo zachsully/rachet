@@ -23,7 +23,9 @@
       [`(+ ,e1 ,e2) (let ([tmp (gensym)])
                       (let-values ([(ex1 stmts1) (flatten e1)]
                                    [(ex2 stmts2) (flatten e2)])
-                         (values tmp (append stmts1 stmts2 `((assign ,tmp (+ ,ex1 ,ex2)))))))]
+                        (values tmp (append stmts1
+                                            stmts2
+                                            `((assign ,tmp (+ ,ex1 ,ex2)))))))]
            )))
 
 (define unique-vars
