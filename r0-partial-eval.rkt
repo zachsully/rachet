@@ -34,7 +34,7 @@
     [`(- ,e1) (pe-neg (pe-arith e1))]
     [`(+ ,e1 ,e2) (pe-add (pe-arith e1) (pe-arith e2))]
     [`(program ,e) `(program ,(pe-arith e))]
-    ))   
+    ))
 
 ;; Define the passes to be used by interp-tests and the grader
 ;; Note that your compiler file (or whatever file provides your passes)

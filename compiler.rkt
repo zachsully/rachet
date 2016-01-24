@@ -10,11 +10,6 @@
 
 (provide r1-passes)
 
-;; (define (structure e)
-;;   (cond
-;;    [(symbol? e) `(var ,e)]
-;;    [else `(int ,e)]))
-
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("select instructions",select-instructions,interp-x86)
