@@ -1,6 +1,5 @@
 #lang racket
 (require "../utilities.rkt")
-;; (require "uncover-live.rkt") ;; for debug
 (provide build-interference)
 
 (define (build-interference e)
