@@ -1,7 +1,7 @@
 #lang racket
 (require racket/pretty)
 (provide debug map2 label-name lookup  make-dispatcher assert
-         read-fixnum read-program 
+         read-fixnum read-program
 	 compile compile-file check-passes interp-tests compiler-tests fix while 
 	 make-graph add-edge adjacent vertices print-dot
 	 general-registers registers-for-alloc caller-save callee-save
