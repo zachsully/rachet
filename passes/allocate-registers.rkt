@@ -9,7 +9,8 @@
     [`(program (,vs ,inter-graph) ,instrs ...)
      (let ([sat-graph (make-sat-graph vs)]
            [c-graph (make-color-graph vs)])
-       `(program (,vs ,(color-graph vs inter-graph sat-graph c-graph)) ,@instrs))]))
+	  `(program (,vs ,(color-graph vs inter-graph sat-graph c-graph))
+                 ,@instrs))]))
 
 ;; Initialize the color-graph
 (define (make-color-graph vertices)

@@ -17,19 +17,19 @@
           `(program ,vars ,@(append rhs `((return ,ex))))))]
      [`(read)
       (if need-var
-        (let ([tmp (gensym)])
+        (let ([tmp (gensym "tmp")])
           (values tmp `((assign ,tmp (read)))))
         (values '(read) `()))]
      [`(- ,es)
       (if need-var
-        (let ([tmp (gensym)])
+        (let ([tmp (gensym "tmp")])
           (let-values ([(ex stmts) (flatten^ es need-var)])
             (values tmp (append stmts `((assign ,tmp (- ,ex)))))))
         (let-values ([(ex stmts) (flatten^ es need-var)])
           (values `(- ,ex) stmts)))]
      [`(+ ,e1 ,e2)
       (if need-var
-        (let ([tmp (gensym)])
+        (let ([tmp (gensym "tmp")])
           (let-values ([(ex1 stmts1) (flatten^ e1 need-var)]
                        [(ex2 stmts2) (flatten^ e2 need-var)])
             (values tmp (append stmts1 stmts2 `((assign ,tmp (+ ,ex1 ,ex2)))))))

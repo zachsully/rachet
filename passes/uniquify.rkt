@@ -10,7 +10,7 @@
       [(? integer?) e]
       [`(let ([,x ,e^]) ,body)
         (let ([e^^ ((uniquify^ alist) e^)])
-          (let ([newsym (gensym)])
+          (let ([newsym (gensym "tmp")])
             `(let ([,newsym ,e^^]) ,((uniquify^ `((,x . ,newsym) . ,alist)) body))))]
       [`(,op ,es ...)
        `(,op ,@(map (uniquify^ alist) es))]
