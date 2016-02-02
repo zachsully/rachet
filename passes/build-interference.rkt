@@ -30,11 +30,15 @@
        (map (lambda (v) (add-edge graph d v))
             (filter (lambda (v)
                       (not (eq? d v))) live-after))]
-      [`(callq (,_ ,d))
+      [`(negq (,_ ,d))
+       (map (lambda (v) (add-edge graph d v))
+            (filter (lambda (v)
+                      (not (eq? d v))) live-after))]
+      [`(callq ,_)
        (map (lambda (v)
               (map (lambda (r)
                      (add-edge graph r v))
-                   caller-save))
+                   (set->list caller-save)))
             live-after)])))
   graph)
 

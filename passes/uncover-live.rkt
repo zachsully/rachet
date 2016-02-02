@@ -27,17 +27,21 @@
     [`(addq (int ,a) (,_ ,b)) (list b)]
     [`(addq (,_ ,a) (,_ ,b)) (list b a)]
     [`(,_ (int ,a) ,_) '()]
-    [`(,_ (,_ ,a) ,_) `(,a)])))
+    [`(,_ (,_ ,a) ,_) `(,a)]
+    [`(,_ (,_ ,a)) `(,a)]
+    [`(,_ ,_) '()])))
 
 (define writes
   (lambda (instr)
     (match instr
-     [`(,_ ,_ (,_ ,b)) b])))
+     [`(,_ ,_ (,_ ,b)) b]
+     [`(,_ (,_ ,a)) `(,a)]
+     [`(,_ ,_) '()])))
 
 ;; ((lambda (p)
 ;;    (uncover-live p))
 ;;  `(program (y)
-;;     (movq (int 1) (var y))
+;;     (negq (var y))
 ;;     (subq (var y) (reg rax))))
 
 
