@@ -37,4 +37,4 @@
 	  (string-append "$" (number->string i))]
 	 [`(stack ,loc)
 	  (string-append (number->string loc) "(%rbp)")]
-	 [`(reg ,r) "%rax"])) ;; this is dirty
+	 [`(reg ,r) (string-append "%" (symbol->string r))])) ;; this is dirty

@@ -39,7 +39,7 @@
               (map (lambda (r)
                      (add-edge graph r v))
                    (set->list caller-save)))
-            live-after)])))
+            '())])))
   graph)
 
 

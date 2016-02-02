@@ -11,8 +11,8 @@
                                    (movq (reg rax) (var ,v)))]
             [`(assign ,v (- ,e1))
              (if (symbol? e1)
-                 `((negq (var ,e1))
-                   (movq (var ,e1) (var ,v)))
+                 `((movq (var ,e1) (var ,v))
+		   (negq (var ,v)))
 
                  `((movq (int ,e1) (var ,v))
                    (negq (var ,v))))]
@@ -20,8 +20,8 @@
              (cond
               [(and (symbol? e1)
                     (symbol? e2))
-               `((addq (var ,e1) (var ,e2))
-                 (movq (var ,e2) (var ,v)))]
+               `((movq (var ,e2) (var ,v))
+	         (addq (var ,e1) (var ,v)))]
               [(symbol? e1)
                `((movq (var ,e1) (var ,v))
                  (addq (int ,e2) (var ,v)))]
