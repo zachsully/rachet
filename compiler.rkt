@@ -27,38 +27,4 @@
 (interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 6))
 (compiler-tests "r1p-passes" r1-passes "r1" (range 1 20))
 (compiler-tests "r1p-passes" r1-passes "r1a" (range 1 9))
-;; (display "tests passed!") (newline)
-
-
-;; (let ([p `(program (let ([a (read)])
-;;   (let ([b (read)])
-;;     (let ([c (read)])
-;;       (let ([d (read)])
-;;         (let ([e (read)])
-;;           (let ([f (read)])
-;;             (let ([g (read)])
-;;               (let ([h (read)])
-;;                 (let ([i (read)])
-;;                   (let ([j (read)])
-;;                     (let ([k (read)])
-;;                       (+ a 
-;;                          (+ b 
-;;                             (+ c 
-;;                                (+ d 
-;;                                   (+ e 
-;;                                      (+ f 
-;;                                         (+ g 
-;;                                            (+ h 
-;;                                               (+ i 
-;;                                                  (+ j
-;;                                                     (+ k 31)))))))))))))))))))))) 
-
-  
-;; )])
-;;   (display (print-x86 (patch-instructions
-;;     (assign-homes
-;;      (allocate-registers
-;;       (build-interference
-;;        (uncover-live
-;; 	(select-instructions
-;; 	 (flatten (uniquify p)))))))))))
+(display "tests passed!") (newline)

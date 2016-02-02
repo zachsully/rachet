@@ -8,44 +8,40 @@
 (provide assign-homes)
 
 
-(define (assign-homes e)
-  (match e
-   (`(program (,vars ,allocation) ,es ...)
-    (let ([alist (foldl (lambda (x acc)
-                          (match x
-                                 [`(,v . ,c) (cons `(,v . ,(color-regs c)) acc)]))
-                        '()
-                        (hash->list allocation))])
-      `(program
-        ,vars
-        ,@(map
-          (lambda (e)
-            (match e
-             (`(,op ,var ...)
-              `(,op ,@(map (lambda (v)
-                             (match v
-                              [`(var ,r) (lookup r alist)]
-                              [`,_ v]))
-                           var)))))
-          es))))))
+(define assign-homes
+  (lambda (e)
+    (match e
+           [`(program (,vars ,reg-map) ,instr ...)
+            (begin
+              (color->reg reg-map)
+             `(program (,vars ,reg-map) ,@(assign-helper instr reg-map)))])))
 
-(define (color-regs i)
-  (if (> i 12)
-        `(stack ,(- (* 8 (- i 12))))
-        `(reg ,(vector-ref general-registers i))))
+(define assign-helper
+  (lambda (instr reg-map)
+    (map (lambda (x)
+           (match x
+             [`() '(nothing)]
+             [`(,op (var ,x) (var ,y)) (let ([x^ (hash-ref reg-map x)]
+                                             [y^ (hash-ref reg-map y)])
+                                         `(,op ,x^ ,y^))]
+             [`(,op (int ,x) (var ,y)) (let ([y^ (hash-ref reg-map y)])
+                                         `(,op (int ,x) ,y^))]
+             [`(,op (var ,x) ,y) (let ([x^ (hash-ref reg-map x)])
+                                   `(,op ,x^ ,y))]
+             [`(negq (var ,x)) `(negq ,(hash-ref reg-map x))]
+             [`(,op (,typex ,x) (,typey ,y)) (let ([x^ (hash-ref reg-map x #f)]
+                                                 [y^ (hash-ref reg-map y #f)])
+                                             (cond
+                                               [(and (equal? x^ #f) (equal? y^ #f))
+                                                `(,op (,typex ,x) (,typey ,y))]
+                                               [(equal? x^ #f) `(,op (,typex ,x) ,y^)]
+                                               [else `(,op ,x^ (,typey ,y))]))]
+             [`(callq ,x) `(callq ,x)]))
+         instr)))
 
-;; (define p
-;;   `(program (v w x y z)
-;;             (movq (int 1) (var v))       ;; v
-;;             (movq (int 46) (var w))      ;; v,w
-;;             (movq (var v) (var x))       ;; w,x
-;;             (addq (int 7) (var x))       ;; w,x
-;;             (movq (var x) (var y))       ;; w,x,y
-;;             (addq (int 4) (var y))       ;; w,x,y
-;;             (movq (var x) (var z))       ;; w,y,z
-;;             (addq (var w) (var z))       ;; y,z
-;;             (movq (var z) (reg rax))     ;; y,rax
-;;             (subq (var y) (reg rax))))
-
-;; (let ([inter-graph (build-interference (uncover-live p))])
-;;   (assign-homes (allocate-registers inter-graph)))
+(define color->reg
+  (lambda (color-hash)
+    (hash-map color-hash (lambda (x y)
+                            (if (> y 12)
+                              (hash-set! color-hash x `(stack ,(- (* 8 (- y 12)))))
+                (hash-set! color-hash x `(reg ,(vector-ref general-registers y))))))))
