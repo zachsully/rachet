@@ -2,6 +2,9 @@
 (require "../utilities.rkt")
 (provide typecheck-R2)
 
+;; if returning two types?
+;; read returning just int?
+
 (define (typecheck-R2 p)
   (match p
    [`(program ,e) (typecheck-R2^ '() e)]))
