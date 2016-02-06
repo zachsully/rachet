@@ -1,5 +1,6 @@
 #lang racket
 (require "../utilities.rkt")
+;; (require "macros.rkt") ;; for debug
 (provide typecheck-R2)
 
 ;; if returning two types?
@@ -22,7 +23,11 @@
                             e)])]
           [tht (typecheck-R2^ env thn)]
           [et (typecheck-R2^ env els)])
-      `(,tht ,et))]
+      (if (eq? tht et)
+          tht
+          (error 'typecheck-R2^
+                 "'if' expects 2nd and 3rd arg to be the same type"
+                 e)))]
    [`(let ([,x ,e^]) ,body)
     ((lambda (t)
        (typecheck-R2^ (cons (cons x t) env) body))
@@ -36,4 +41,5 @@
 (typecheck-R2 `(program (not #f)))
 (typecheck-R2 `(program 42))
 (typecheck-R2 `(program (not #t)))
-(typecheck-R2 `(program (if #t 1 #f)))
+(typecheck-R2 `(program (if #f #t #f)))
+(typecheck-R2 `(program (if (let ([x 42]) #t) #t #f)))

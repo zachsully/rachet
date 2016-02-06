@@ -27,22 +27,9 @@
          ,(expand-macros els))]
    [`(and ,e ,es ...)
     `(if ,(expand-macros e)
-         ,(map expand-macros es)
+         ,(if (null? es) #t (expand-macros `(and ,@es)))
          #f)]
    [`(or ,e ,es ...)
     `(if ,(expand-macros e)
          #t
-         ,(map expand-macros es))]))
-
-((lambda (ps)
-   (map (lambda (p)
-          (display p)
-          (interp-S1 p)
-          (newline)
-          (display (macros p))
-          (interp-S1 (macros p))
-          (newline)) ps))
- `((program 42)
-   (program (+ 1 2))
-   (program (or #t #f #t))
-   (program (and #t #f #t))))
+         ,(if (null? es) #f (expand-macros `(or ,@es))))]))
