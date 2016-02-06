@@ -19,15 +19,13 @@
     (let ([ct (match (typecheck-R2^ env cnd)
                ['Boolean 'Boolean]
                [else (error 'typecheck-R2^
-                            "'if' expects a Boolean in first arg"
-                            e)])]
+                            "'if' expects a Boolean in first arg")])]
           [tht (typecheck-R2^ env thn)]
           [et (typecheck-R2^ env els)])
       (if (eq? tht et)
           tht
           (error 'typecheck-R2^
-                 "'if' expects 2nd and 3rd arg to be the same type"
-                 e)))]
+                 "'if' expects 2nd and 3rd arg to be the same type")))]
    [`(let ([,x ,e^]) ,body)
     ((lambda (t)
        (typecheck-R2^ (cons (cons x t) env) body))
@@ -35,11 +33,20 @@
    [`(not ,e)
     (match (typecheck-R2^ env e)
      ['Boolean 'Boolean]
-     [else (error 'typecheck-R2^ "'not' expects a Boolean" e)])]))
+     [else (error 'typecheck-R2^ "'not' expects a Boolean")])]
+   [`(eq? ,x ,y)
+    (match `(,(typecheck-R2^ env x) . ,(typecheck-R2^ env y))
+     [`(,tx . ,ty)
+      (if (eq? tx ty)
+          'Boolean
+          (error 'typecheck-R2^ "'eq?' expects args of same type" ))])]))
 
 (typecheck-R2 `(program #f))
 (typecheck-R2 `(program (not #f)))
 (typecheck-R2 `(program 42))
 (typecheck-R2 `(program (not #t)))
-(typecheck-R2 `(program (if #f #t #f)))
+(typecheck-R2 `(program (if #t #t #f)))
 (typecheck-R2 `(program (if (let ([x 42]) #t) #t #f)))
+(typecheck-R2 `(program (if (eq? 1 2) #t #f)))
+(typecheck-R2 `(program (let ([x #t])
+                          (if (eq? #t x) #t #f))))

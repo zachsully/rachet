@@ -32,4 +32,7 @@
    [`(or ,e ,es ...)
     `(if ,(expand-macros e)
          #t
-         ,(if (null? es) #f (expand-macros `(or ,@es))))]))
+         ,(if (null? es) #f (expand-macros `(or ,@es))))]
+   [`(eq? ,x ,y) `(eq ,(expand-macros x) ,(expand-macros y))]))
+
+(expand-macros `(eq? (or #t #t) (and #f #t)))
