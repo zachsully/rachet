@@ -75,4 +75,4 @@
        `(program ,vs ,@intrs))]))
 
 ;; (display (flatten `(program (if (eq? (read) 1) 42 0))))
-(display (select-instructions (flatten `(program (if (eq? (read) 1) 42 0)))))
+;; (display (select-instructions (flatten `(program (if (eq? (read) 1) 42 0)))))

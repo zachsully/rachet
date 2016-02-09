@@ -19,7 +19,7 @@
                     ("macros", macros, interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("select instructions",select-instructions,interp-x86)
-                    ;; ("uncover-live",uncover-live,interp-x86)
+                    ("uncover-live",uncover-live,interp-x86)
                     ;; ("build-interference",build-interference,interp-x86)
                     ;; ("allocate-registers",allocate-registers,interp-x86)
                     ;; ("assign homes",assign-homes,interp-x86)
