@@ -14,9 +14,7 @@ void print_int(long x) {
 
 
 void print_bool(int x) {
-  if (x) 
+  if (x)
     printf("#t");
   else printf("#f");
 }
-
-    

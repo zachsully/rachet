@@ -10,21 +10,37 @@
 (require "passes/allocate-registers.rkt")
 (require "passes/patch-instructions.rkt")
 (require "passes/print-x86.rkt")
+(require "passes/typecheck-R2.rkt")
+(require "passes/macros.rkt")
 
 (provide r1-passes)
 
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
+                    ("macros", macros, interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("select instructions",select-instructions,interp-x86)
-                    ("uncover-live",uncover-live,interp-x86)
-                    ("build-interference",build-interference,interp-x86)
-                    ("allocate-registers",allocate-registers,interp-x86)
-                    ("assign homes",assign-homes,interp-x86)
-                    ("patch instructions",patch-instructions,interp-x86)
-                    ("print-x86",print-x86, #f)
+                    ;; ("uncover-live",uncover-live,interp-x86)
+                    ;; ("build-interference",build-interference,interp-x86)
+                    ;; ("allocate-registers",allocate-registers,interp-x86)
+                    ;; ("assign homes",assign-homes,interp-x86)
+                    ;; ("patch instructions",patch-instructions,interp-x86)
+                    ;; ("print-x86",print-x86, #f)
                     ))
 
-(interp-tests "r1p-passes" r1-passes interp-scheme "r1" (range 1 6))
-(compiler-tests "r1p-passes" r1-passes "r1" (range 1 20))
-(compiler-tests "r1p-passes" r1-passes "r1a" (range 1 9))
+(define (compile-prog p)
+  (print-x86
+   (patch-instructions
+    (assign-homes
+     (allocate-registers
+      (build-interference
+       (uncover-live
+        (select-instructions
+         (flatten
+          (uniquify p))))))))))
+
+;; (display (compile-prog `(program 42)))
+(interp-tests "r1p" typecheck-R2 r1-passes interp-scheme "r1" (range 1 20))
+(interp-tests "r2" typecheck-R2 r1-passes interp-scheme "r2" (range 1 10))
+;; (compiler-tests "r1-passes" typecheck-R2 r1-passes "r1" (range 1 20))
+;; (compiler-tests "r1a-passes" typecheck-R2 r1-passes "r1a" (range 1 9))
 (display "tests passed!") (newline)

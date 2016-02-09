@@ -1,52 +1,67 @@
 #lang racket
 (require "../utilities.rkt")
-;; (require "macros.rkt") ;; for debug
 (provide typecheck-R2)
 
-;; if returning two types?
-;; read returning just int?
-
-(define (typecheck-R2 p)
-  (match p
-   [`(program ,e) (typecheck-R2^ '() e)]))
 
 (define (typecheck-R2^ env e)
-  (match e
-   [(? fixnum?) 'Integer]
-   [(? boolean?) 'Boolean]
-   [(? symbol?) (lookup e env)]
-   [`(if ,cnd ,thn ,els)
-    (let ([ct (match (typecheck-R2^ env cnd)
-               ['Boolean 'Boolean]
-               [else (error 'typecheck-R2^
-                            "'if' expects a Boolean in first arg")])]
-          [tht (typecheck-R2^ env thn)]
-          [et (typecheck-R2^ env els)])
-      (if (eq? tht et)
-          tht
-          (error 'typecheck-R2^
-                 "'if' expects 2nd and 3rd arg to be the same type")))]
-   [`(let ([,x ,e^]) ,body)
-    ((lambda (t)
-       (typecheck-R2^ (cons (cons x t) env) body))
-     (typecheck-R2^ env e^))]
-   [`(not ,e)
-    (match (typecheck-R2^ env e)
-     ['Boolean 'Boolean]
-     [else (error 'typecheck-R2^ "'not' expects a Boolean")])]
-   [`(eq? ,x ,y)
-    (match `(,(typecheck-R2^ env x) . ,(typecheck-R2^ env y))
-     [`(,tx . ,ty)
-      (if (eq? tx ty)
-          'Boolean
-          (error 'typecheck-R2^ "'eq?' expects args of same type" ))])]))
+ (match e
+  [(? fixnum?) 'Integer]
+  [(? boolean?) 'Boolean]
+  [(? symbol?) (lookup e env)]
+  [`(let ([,x ,e]) ,body) (define T (typecheck-R2^ env e))
+   (define new-env (cons (cons x T) env))
+   (typecheck-R2^ new-env body)]
+  [`(- ,e)
+   (match (typecheck-R2^ env e)
+          ['Integer 'Integer]
+          [else (error 'typecheck-R2^ "'-' expects a Integer" e)])]
+  [`(+ ,e1 ,e2)
+   (cond
+    [(not (equal? 'Integer (typecheck-R2^ env e1)))
+     (error 'typecheck-R2^ "'+' expects a Integer" e1)]
+    [(not (equal? 'Integer (typecheck-R2^ env e2)))
+     (error 'typecheck-R2^ "'+' expects a Integer" e2)]
+    [else 'Integer])]
+  [`(read) 'Integer]
+  [`(not ,e)
+   (match (typecheck-R2^ env e)
+          ['Boolean 'Boolean]
+          [else (error 'typecheck-R2^ "'not' expects a Boolean" e)])]
+  [`(and ,e1 ,e2)
+   (cond
+    [(not (equal? 'Boolean (typecheck-R2^ env e1)))
+     (error 'typecheck-R2^ "'and' expects a Boolean" e1)]
+    [(not (equal? 'Boolean (typecheck-R2^ env e2)))
+     (error 'typecheck-R2^ "'and' expects a Boolean" e2)]
+    [else 'Boolean])]
+  [`(or ,e1 ,e2)
+   (cond
+    [(not (equal? 'Boolean (typecheck-R2^ env e1)))
+     (error 'typecheck-R2^ "'or' expects a Boolean" e1)]
+    [(not (equal? 'Boolean (typecheck-R2^ env e2)))
+     (error 'typecheck-R2^ "'or' expects a Boolean" e2)]
+    [else 'Boolean])]
+  [`(eq? ,e1 ,e2)
+   (let ([e1^ (typecheck-R2^ env e1)]
+         [e2^ (typecheck-R2^ env e2)])
+     (cond
+      [(eq? e1^ e2^) 'Boolean]
+      [else (error 'typecheck-R2^
+                   (string-append "'eq?' expects a " (symbol->string e1^))
+                   e2)]))]
+  [`(if ,cnd ,thn ,els)
+   (let ([cnd^ (typecheck-R2^ env cnd)])
+     (cond
+      [(equal? cnd^ 'Boolean)
+       (define thn^ (typecheck-R2^ env thn))
+       (define els^ (typecheck-R2^ env els))
+       (if (equal? thn^ els^)
+           thn^
+           (error 'typecheck-R2^
+                  (string-append "'if' expects a "(symbol->string thn^))))]
+      [else (error 'typecheck-R2^ "'if' expects a Boolean" cnd)]))]
+  [`(program ,body) (typecheck-R2^ '() body) ]))
 
-(typecheck-R2 `(program #f))
-(typecheck-R2 `(program (not #f)))
-(typecheck-R2 `(program 42))
-(typecheck-R2 `(program (not #t)))
-(typecheck-R2 `(program (if #t #t #f)))
-(typecheck-R2 `(program (if (let ([x 42]) #t) #t #f)))
-(typecheck-R2 `(program (if (eq? 1 2) #t #f)))
-(typecheck-R2 `(program (let ([x #t])
-                          (if (eq? #t x) #t #f))))
+(define (typecheck-R2 e)
+  (typecheck-R2^ '() e))
+;;(typecheck-R2^ '() `(program (let ((x #t)) 42)))
