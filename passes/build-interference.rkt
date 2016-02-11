@@ -1,114 +1,92 @@
 #lang racket
 (require "../utilities.rkt")
-(require "uncover-live.rkt") ;; for test
 (provide build-interference)
+(require racket/pretty)
 
-(define (build-interference e)
-  (match e
-   [`(program (,vs ,live-afters) ,instrs ...)
-    `(program (,vs ,(build (make-graph vs) live-afters instrs))
-              ,@instrs)])
-  )
+(define build-interference
+  (lambda (e)
+    (match e
+      [`(program (,vs ,uncover) ,instrs ...)
+       (let ([graph (make-graph vs)])
+            (build-graph graph uncover)
+         `(program (,vs ,graph) ,@instrs))])))
 
-(define (build graph live-afters instrs)
-  ((lambda (f) (map f live-afters instrs))
-   (lambda (live-after instr)
-     (match instr
-      [`(cmpq ,_ (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (not (eq? d v))) live-after))]
-      [`(sete (byte-reg ,al))
-       (map (lambda (v) (add-edge graph 'rax v)) '())]
+(define build-graph
+  (lambda (graph uncover)
+    (for ([line uncover])
+      (let ([instr (first line)]
+            [after-set (last line)])
+        (match instr
+          [`(,op (,_ ,src) (,_ ,dst))
+           #:when (member op '(movq movzbq))
+           (set-map (set-subtract after-set (set src dst))
+                    (lambda (live-after)
+                      (add-edge graph dst live-after)))]
+          
+          [`(,op (,_ ,src) (,_ ,dst))
+           #:when (member op '(addq subq xorq))
+           (set-map (set-subtract after-set (set dst))
+                    (lambda (live-after)
+                      (add-edge graph dst live-after)))]
+          
+          [`(,op (,_ ,src) (,_ ,dst))
+           #:when (member op '(cmpq))
+           (void)]
+          
+          [`(,op (,_ ,dst))
+           #:when (member op '(negq sete))
+           (void)]
+          [`(if (eq? (int 1) ,cnd) ,thn ,els)
+           (begin
+             (build-graph graph thn)
+             (build-graph graph els))]
+          [`(callq ,label)
+           (set-map after-set
+                    (lambda (live-after)
+                      (set-map caller-save
+                               (lambda (call-save)
+                                 (add-edge graph call-save live-after))))
+                    )]
+          )))))
 
-      [`(if (eq? (int ,a) (int ,d)) ,thn ,els)
-       (begin
-         (build graph (find-live-afters thn) thn)
-         (build graph (find-live-afters els) els))]
+#|
+                  
+(pretty-print    
+(build-interference 
+ `(program ((eq7719 if7720)
+  (((cmpq (int 0) (int 0)) ,(set 'rax) ,(set 'rax))
+   ((sete (byte-reg al)) ,(set 'rax) ,(set 'rax))
+   ((movzbq (byte-reg al) (var eq7719)) ,(set 'rax) ,(set 'eq7719))
+   ((if (eq? #t (var eq7719))
+     (((movq (int 42) (var if7720)) ,(set ) ,(set 'if7720)))
+     (((movq (int 42) (var if7720)) ,(set ) ,(set 'if7720))))
+    ,(set 'eq7719) ,(set 'if7720))
+   ((movq (var if7720) (reg rax)) ,(set 'if7720) ,(set ))))
+ (cmpq (int 0) (int 0))
+ (sete (byte-reg al))
+ (movzbq (byte-reg al) (var eq7719))
+ (if (eq? #t (var eq7719))
+    ((movq (int 42) (var if7720)))
+    ((movq (int 777) (var if7720))))
+ (movq (var if7720) (reg rax)))
+ 
+|#
 
-      [`(if (eq? (,_ ,a) (int ,d)) ,thn ,els)
-       (begin
-         (map (lambda (v) (add-edge graph a v))
-              (filter (lambda (v)
-                        (not (eq? a v))) live-after))
-         (build graph (find-live-afters thn) thn)
-         (build graph (find-live-afters els) els))]
 
-      [`(if (eq? (,_ ,a) (,_ ,d)) ,thn ,els)
-       (begin
-         (map (lambda (v) (add-edge graph a v))
-              (filter (lambda (v)
-                        (and (not (eq? a v))
-                             (not (eq? d v)))) live-after))
-         (build graph live-afters thn)
-         (build graph live-afters els))]
-      [`(movq (,_ ,a) (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (and (not (eq? a v))
-                           (not (eq? d v)))) live-after))]
-      [`(movq (int ,_) (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (not (eq? d v))) live-after))]
-      [`(movzbq (,_ ,a) (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (and (not (eq? a v))
-                           (not (eq? d v)))) live-after))]
-      [`(movzbq (int ,_) (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (not (eq? d v))) live-after))]
-      [`(addq ,a (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (not (eq? d v))) live-after))]
-      [`(subq ,a (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (not (eq? d v))) live-after))]
-      [`(negq (,_ ,d))
-       (map (lambda (v) (add-edge graph d v))
-            (filter (lambda (v)
-                      (not (eq? d v))) live-after))]
-      [`(callq ,_)
-       (map (lambda (v)
-              (map (lambda (r)
-                     (add-edge graph r v))
-                   (set->list caller-save)))
-            live-after)])))
-  graph)
+  #|
+  
+  `(program ((tmp7624) (((movq (int 1) (var tmp7624)) ,(set ) ,(set ))
+                                          ((movq (int 42) (reg rax)) ,(set ) ,(set ))))
+ (movq (int 1) (var tmp7624))
+ (movq (int 42) (reg rax)))
+|#
 
-(define (find-live-afters if-stmt)
-  (match (uncover-live `(program (()) ,@if-stmt))
-   [`(program (,vs ,live-afters) ,instrs ...) live-afters]))
+ #|`(program ((tmp7664) (((movq (int 1) (var tmp7664)) ,(set ) ,(set ))
+                      ((movq (int 42) (reg rax)) ,(set ) ,(set ))))
+          (movq (int 1) (var tmp7664))
+          (movq (int 42) (reg rax)))
 
-;; (pretty-print
-;;  ((lambda (ps)
-;;     (map (lambda (p)
-;;            (build-interference (uncover-live p))) ps))
-;;   `((program (v w x y z)
-;;      (movq (int 1) (var v))       ;; v
-;;      (movq (int 46) (var w))      ;; v,w
-;;      (movq (var v) (var x))       ;; w,x
-;;      (addq (int 7) (var x))       ;; w,x
-;;      (movq (var x) (var y))       ;; w,x,y
-;;      (addq (int 4) (var y))       ;; w,x,y
-;;      (movq (var x) (var z))       ;; w,y,z
-;;      (addq (var w) (var z))       ;; y,z
-;;      (movq (var z) (reg rax))     ;; y,rax
-;;      (subq (var y) (reg rax)))    ;;
-;;    (program (things)
-;;      (callq read_int)                  ;; rax
-;;      (movq (reg rax) (var t.1))        ;; t.1
-;;      (cmpq (int 1) (var t.1))          ;; al?
-;;      (sete (byte-reg al))              ;; al?
-;;      (movzbq (byte-reg al) (var t.2))  ;; t.2
-;;      (if (eq? (int 1) (var t.2))            ;;
-;;          ((movq (int 42) (var if.1))
-;; 	  (movq (int 42) (var t.2))
-;; 	  (movq (int 42) (var t.1)))
-;;          ((movq (int 0) (var if.1))))  ;; if.1
-;;      (movq (var if.1) (reg rax)))      ;;
-;;    )))
+
+))
+
+|#

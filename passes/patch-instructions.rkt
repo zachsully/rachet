@@ -14,4 +14,7 @@
    [`(,op (stack ,var1) (stack ,var2))
     `((movq (stack ,var1) (reg rax))
       (,op (reg rax) (stack ,var2)))]
+   [`(,op ,var1 (int ,x))
+    `((movq (int ,x) (reg rax))
+      (,op ,var1 (reg rax)))]
    [else `(,e)]))

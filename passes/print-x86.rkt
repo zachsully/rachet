@@ -36,15 +36,17 @@
 
 (define (print-x86^ e)
   (match e
-   [`(movq ,a ,b)
-    (string-append "\tmovq\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
-   [`(addq ,a ,b)
-    (string-append "\taddq\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
-   [`(negq ,q)
-    (string-append "\tnegq\t" (print-x86^ q) "\n")]
+   [`(,op ,a ,b) #:when (member op '(movq addq cmpq movzbq xorq))
+    (string-append "\t" (symbol->string op) "\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
+   [`(,op ,q) #:when (member op '(negq sete))
+    (string-append "\t" (symbol->string op) "\t" (print-x86^ q) "\n")]
    [`(callq read_int) "\tcallq\tread_int\n"]
+   [`(,op ,lbl) #:when(member op '(je jmp))
+     (string-append "\t" (symbol->string op) "\t" (symbol->string lbl) "\n")]
+   [`(label ,lbl)
+     (string-append (symbol->string lbl) ":\n")]
    [`(int ,i)
     (string-append "$" (number->string i))]
    [`(stack ,loc)
     (string-append (number->string loc) "(%rbp)")]
-   [`(reg ,r) (string-append "%" (symbol->string r))]))
+   [`(,type ,r) #:when (member type '(reg byte-reg)) (string-append "%" (symbol->string r))]))
