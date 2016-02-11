@@ -1,7 +1,5 @@
 #lang racket
 (require "../utilities.rkt")
-;; (require "uniquify.rkt")
-;; (require racket/pretty)
 (provide flatten)
 
 (define flatten^

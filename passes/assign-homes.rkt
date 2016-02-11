@@ -22,6 +22,15 @@
      (lambda (x)
       (match x
        [`() '(nothing)]
+       [`(if (eq? ,_ (var ,x)) ,thn ,els)
+        (let ([cnd^ (hash-ref reg-map x)]
+              [thn^ (assign-helper thn reg-map)]
+              [els^ (assign-helper els reg-map)])
+          `(if (eq? (int 1) ,cnd^) ,thn^ ,els^))]
+       [`(if (eq? ,_ ,cnd) ,thn ,els)
+        (let ([thn^ (assign-helper thn reg-map)]
+              [els^ (assign-helper els reg-map)])
+          `(if (eq? (int 1) ,cnd) ,thn^ ,els^))]
        [`(,op (var ,x) (var ,y))
         (let ([x^ (hash-ref reg-map x)]
               [y^ (hash-ref reg-map y)])
@@ -42,7 +51,8 @@
             `(,op (,typex ,x) (,typey ,y))]
            [(equal? x^ #f) `(,op (,typex ,x) ,y^)]
            [else `(,op ,x^ (,typey ,y))]))]
-       [`(callq ,x) `(callq ,x)]))
+       [`(callq ,x) `(callq ,x)]
+       [`,_ x]))
          instr)))
 
 (define color->reg

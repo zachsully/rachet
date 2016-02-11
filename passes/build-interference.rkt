@@ -18,22 +18,21 @@
        (map (lambda (v) (add-edge graph d v))
             (filter (lambda (v)
                       (not (eq? d v))) live-after))]
-
       [`(sete (byte-reg ,al))
        (map (lambda (v) (add-edge graph 'rax v)) '())]
 
       [`(if (eq? (int ,a) (int ,d)) ,thn ,els)
        (begin
          (build graph (find-live-afters thn) thn)
-         (build graph live-afters els))]
+         (build graph (find-live-afters els) els))]
 
       [`(if (eq? (,_ ,a) (int ,d)) ,thn ,els)
        (begin
          (map (lambda (v) (add-edge graph a v))
               (filter (lambda (v)
                         (not (eq? a v))) live-after))
-         (build graph live-afters thn)
-         (build graph live-afters els))]
+         (build graph (find-live-afters thn) thn)
+         (build graph (find-live-afters els) els))]
 
       [`(if (eq? (,_ ,a) (,_ ,d)) ,thn ,els)
        (begin
@@ -43,7 +42,6 @@
                              (not (eq? d v)))) live-after))
          (build graph live-afters thn)
          (build graph live-afters els))]
-
       [`(movq (,_ ,a) (,_ ,d))
        (map (lambda (v) (add-edge graph d v))
             (filter (lambda (v)
@@ -83,8 +81,8 @@
   graph)
 
 (define (find-live-afters if-stmt)
-  (match (uncover-live if-stmt)
-   []))
+  (match (uncover-live `(program (()) ,@if-stmt))
+   [`(program (,vs ,live-afters) ,instrs ...) live-afters]))
 
 ;; (pretty-print
 ;;  ((lambda (ps)
