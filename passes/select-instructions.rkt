@@ -51,6 +51,9 @@
       [`(assign ,v ,x)
        (cond
         [(symbol? x) `((movq (var ,x) (var ,v)))]
+        [(boolean? x)
+         (let ([b (if x `(int 1) `(int 0))])
+           `((movq ,b (var ,v))))]
         [else `((movq (int ,x) (var ,v)))])]
       [`(return ,v)
        (cond

@@ -20,16 +20,15 @@
                     ("flatten",flatten,interp-C)
                     ("select instructions",select-instructions,interp-x86)
                     ("uncover-live",uncover-live,interp-x86)
-                    ;; ("build-interference",build-interference,interp-x86)
-                    ;; ("allocate-registers",allocate-registers,interp-x86)
-                    ;; ("assign homes",assign-homes,interp-x86)
-                    ;; ("patch instructions",patch-instructions,interp-x86)
-                    ;; ("print-x86",print-x86, #f)
+                    ("build-interference",build-interference,interp-x86)
+                    ("allocate-registers",allocate-registers,interp-x86)
+                    ("assign homes",assign-homes,interp-x86)
+                    ("patch instructions",patch-instructions,interp-x86)
+                    ("print-x86",print-x86, #f)
                     ))
 
 (define (compile-prog p)
-  (print-x86
-   (patch-instructions
+  (print-x86 (patch-instructions
     (assign-homes
      (allocate-registers
       (build-interference
@@ -38,9 +37,9 @@
          (flatten
           (uniquify p))))))))))
 
-;; (display (compile-prog `(program 42)))
-(interp-tests "r1p" typecheck-R2 r1-passes interp-scheme "r1" (range 1 20))
-(interp-tests "r2" typecheck-R2 r1-passes interp-scheme "r2" (range 1 10))
+;; (display (compile-prog `(program (+ (+ (+ (+ 1 1) 1) 1) 1))))
+(compiler-tests "r1p" typecheck-R2 r1-passes "r1" (range 1 20))
+(compiler-tests "r2" typecheck-R2 r1-passes "r2" (range 1 10))
 ;; (compiler-tests "r1-passes" typecheck-R2 r1-passes "r1" (range 1 20))
 ;; (compiler-tests "r1a-passes" typecheck-R2 r1-passes "r1a" (range 1 9))
-(display "tests passed!") (newline)
+;; (display "tests passed!") (newline) 
