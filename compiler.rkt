@@ -17,7 +17,7 @@
 (provide r1-passes)
 
 (define r1-passes `(("uniquify",uniquify,interp-scheme)
-                    ("macros", macros, interp-scheme)
+                    ;; ("macros", macros, interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("select instructions",select-instructions,interp-x86)
                     ("uncover-live",uncover-live,interp-x86)
@@ -45,5 +45,5 @@
 ;; (compiler-tests "r1p" typecheck-R2 r1-passes "r1" (range 1 20))
 (compiler-tests "r1-passes" typecheck-R2 r1-passes "r1" (range 1 20))
 (compiler-tests "r1a-passes" typecheck-R2 r1-passes "r1a" (range 1 9))
-(compiler-tests "r2" typecheck-R2 r1-passes "r2" (range 1 10))
+(compiler-tests "r2" typecheck-R2 r1-passes "r2" (range 1 20))
 (display "tests passed!") (newline)

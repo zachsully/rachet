@@ -29,6 +29,7 @@
     `(if ,(expand-macros e)
          ,(if (null? es) #t (expand-macros `(and ,@es)))
          #f)]
+   [`(not ,e) e]
    [`(or ,e ,es ...)
     `(if ,(expand-macros e)
          #t
