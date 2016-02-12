@@ -1,6 +1,15 @@
 #lang racket
 (provide patch-instructions)
 
+;;
+;; Patch Instructions
+;;
+;; patch-instruction : x86' -> x86'
+;;
+;; Pass removes stack to stack operations and ones that have ints in their
+;; righthand-side
+;;
+
 (define patch-instructions
   (lambda (e)
     (match e

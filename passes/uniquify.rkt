@@ -2,6 +2,15 @@
 (require "../utilities.rkt")
 (provide uniquify)
 
+;;
+;; Uniquify
+;;
+;; uniquify : R2 -> R2'
+;;
+;; Pass makes sure all of the vars in the racket program are unique
+;;
+
+
 (define uniquify^
  (lambda (alist)
   (lambda (e)
@@ -22,25 +31,3 @@
 (define uniquify
   (lambda (e)
     ((uniquify^ '()) e)))
-
-#|
-
-((uniquify^ '()) '(program
-                    (let ([x 32])
-                    (+ (let ([x 10]) x) x))))
-
-((uniquify^ '()) '(program
-                     (let ([x (let ([x 4])
-                            (+ x 1))])
-                    (+ x 2))))
-
-((uniquify^ '()) '(program
-   (let ([x 32])
-     (+ (let ([y 10]) x) (let ([y 25]) y)))))
-
-((uniquify^ '()) '(program
-   (let ([x 32])
-     (+ (let ([x 5])
-          (+ (let ([x 4])
-               (+ x x)) x) x) x))))
-|#

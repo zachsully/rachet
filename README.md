@@ -39,4 +39,3 @@ for that purpose. The usage of `compiler-tests` is quite similar to
 
 =======
 # p423
->>>>>>> 3fabd711370f903cb06e832f74bb8ddebf4134c2

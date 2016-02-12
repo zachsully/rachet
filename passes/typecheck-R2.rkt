@@ -2,6 +2,13 @@
 (require "../utilities.rkt")
 (provide typecheck-R2)
 
+;;
+;; R2 Typechecker
+;;
+;; typecheck-R2 : R2 -> Type
+;;
+;; Returns the type of the program or fails
+;;
 
 (define (typecheck-R2^ env e)
  (match e

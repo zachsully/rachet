@@ -1,18 +1,20 @@
 #lang racket
 (provide uncover-live)
-(require racket/pretty)
-(require "flatten.rkt")
-(require "select-instructions.rkt")
+
+;;
+;; Uncover-live
+;;
+;; uncover-live : x86' -> x86' x live-after
+;;
+;; Pass takes an x86' program and returns it with a set of variables that
+;; are live after each instruction
+;;
 
 (define (uncover-live e)
   (match e
    [`(program (,vs ...) ,instrs ...)
     `(program (,vs ,(recieves (reverse instrs) (set ) (set ) '())) ,@instrs)]))
-   ;; `(program (,vs
 
-   ;;             ,(map (lambda (x)
-   ;;                    (set->list (caddr x)))
-   ;;                 (recieves (reverse instrs) (set ) (set ) '()))) ,@instrs)]))
 ;; a variable is live from when it was assigned to when it was used
 ;; The accummulator is structured like this
 ;; `(,instru ,live-before ,live-after)
@@ -79,51 +81,51 @@
 (define recieves-helper
   (lambda (instr after-set)
     (match instr
-           [`(,op ,src ,des) #:when (read2-write? op)
-                             (let ([src^ (binary-live src)]
-                                   [des^ (binary-live des)])
-                               (values instr
-                                       (set-union (set-subtract after-set des^) src^ des^)
-                                       after-set))]
+     [`(,op ,src ,des) #:when (read2-write? op)
+      (let ([src^ (binary-live src)]
+            [des^ (binary-live des)])
+        (values instr
+                (set-union (set-subtract after-set des^) src^ des^)
+                after-set))]
 
-           [`(,op ,src ,des) #:when (read-write? op)
-                             (let ([src^ (binary-live src)]
-                                   [des^ (binary-live des)])
-                               (values instr
-                                       (set-union (set-subtract after-set des^) src^)
-                                       after-set))]
+     [`(,op ,src ,des) #:when (read-write? op)
+      (let ([src^ (binary-live src)]
+            [des^ (binary-live des)])
+        (values instr
+                (set-union (set-subtract after-set des^) src^)
+                after-set))]
 
-           [`(,op ,src) #:when (unary? op)
-                        (let ([src^ (binary-live src)])
-                          (values instr
-                                  (set-union (set-subtract after-set src^) src^)
-                                  after-set))]
+     [`(,op ,src) #:when (unary? op)
+      (let ([src^ (binary-live src)])
+        (values instr
+                (set-union (set-subtract after-set src^) src^)
+                after-set))]
 
-           [`(,op ,src ,dst) #:when (only-reads? op)
-                        (let ([src^ (binary-live src)]
-                              [dst^ (binary-live dst)])
-                          (values instr
-                                  (set-union after-set src^ dst^)
-                                  after-set))]
+     [`(,op ,src ,dst) #:when (only-reads? op)
+      (let ([src^ (binary-live src)]
+            [dst^ (binary-live dst)])
+        (values instr
+                (set-union after-set src^ dst^)
+                after-set))]
 
 
-           [`(,op ,src) #:when (conflict-all? op)
-                        (values instr
-                                (set-union
-                                  (set-subtract after-set (set 'rax))
-                                  (set 'rax))
-                                after-set)]
+     [`(,op ,src) #:when (conflict-all? op)
+      (values instr
+              (set-union
+               (set-subtract after-set (set 'rax))
+               (set 'rax))
+              after-set)]
 
-           [`(if (eq? (int 1) ,cnd) ,thn ,els)
-             (let ([thn^ (recieves thn (set ) after-set '())]
-                   [els^ (recieves thn (set ) after-set '())])
-               (values `(if (eq? (int 1) ,cnd)
-                          ,thn^
-                          ,els^)
-                       (set-union (cadar thn^) (cadar els^) (binary-live cnd))
-                       (set-union (caddar thn^) (caddar els^) after-set)))]
+     [`(if (eq? (int 1) ,cnd) ,thn ,els)
+      (let ([thn^ (recieves thn (set ) after-set '())]
+            [els^ (recieves thn (set ) after-set '())])
+        (values `(if (eq? (int 1) ,cnd)
+                     ,thn^
+                     ,els^)
+                (set-union (cadar thn^) (cadar els^) (binary-live cnd))
+                (set-union (caddar thn^) (caddar els^) after-set)))]
 
-           )))
+     )))
 
 
 

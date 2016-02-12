@@ -2,6 +2,13 @@
 (require "../utilities.rkt")
 (provide print-x86)
 
+;;
+;; Print-x86
+;;
+;; print-x86 : x86' -> x86
+;;
+;; Takes our most reduced AST of x86' and outputs a string of x86
+;;
 
 (define (print-x86 e)
   (match e
@@ -37,7 +44,8 @@
 (define (print-x86^ e)
   (match e
    [`(,op ,a ,b) #:when (member op '(movq addq cmpq movzbq xorq))
-    (string-append "\t" (symbol->string op) "\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
+    (string-append
+     "\t" (symbol->string op) "\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
    [`(,op ,q) #:when (member op '(negq sete))
     (string-append "\t" (symbol->string op) "\t" (print-x86^ q) "\n")]
    [`(callq read_int) "\tcallq\tread_int\n"]
@@ -49,4 +57,5 @@
     (string-append "$" (number->string i))]
    [`(stack ,loc)
     (string-append (number->string loc) "(%rbp)")]
-   [`(,type ,r) #:when (member type '(reg byte-reg)) (string-append "%" (symbol->string r))]))
+   [`(,type ,r) #:when (member type '(reg byte-reg))
+    (string-append "%" (symbol->string r))]))
