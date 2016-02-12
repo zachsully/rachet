@@ -22,17 +22,17 @@
            (set-map (set-subtract after-set (set src dst))
                     (lambda (live-after)
                       (add-edge graph dst live-after)))]
-          
+
           [`(,op (,_ ,src) (,_ ,dst))
            #:when (member op '(addq subq xorq))
            (set-map (set-subtract after-set (set dst))
                     (lambda (live-after)
                       (add-edge graph dst live-after)))]
-          
+
           [`(,op (,_ ,src) (,_ ,dst))
            #:when (member op '(cmpq))
            (void)]
-          
+
           [`(,op (,_ ,dst))
            #:when (member op '(negq sete))
            (void)]
@@ -50,9 +50,9 @@
           )))))
 
 #|
-                  
-(pretty-print    
-(build-interference 
+
+(pretty-print
+(build-interference
  `(program ((eq7719 if7720)
   (((cmpq (int 0) (int 0)) ,(set 'rax) ,(set 'rax))
    ((sete (byte-reg al)) ,(set 'rax) ,(set 'rax))
@@ -69,12 +69,12 @@
     ((movq (int 42) (var if7720)))
     ((movq (int 777) (var if7720))))
  (movq (var if7720) (reg rax)))
- 
+
 |#
 
 
   #|
-  
+
   `(program ((tmp7624) (((movq (int 1) (var tmp7624)) ,(set ) ,(set ))
                                           ((movq (int 42) (reg rax)) ,(set ) ,(set ))))
  (movq (int 1) (var tmp7624))

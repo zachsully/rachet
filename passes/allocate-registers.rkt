@@ -143,17 +143,17 @@
   (display inter-graph)
   (allocate-registers inter-graph))
 
-;; Test case
-(define s
-  `(program (x y g108566)
-            (movq (int 20) (var x))
-            (movq (int 22) (var y))
-            (addq (var x) (var y))
-            (movq (var y) (var g108566))
-            (movq (var g108566) (reg rax))))
+;; ;; Test case
+;; (define s
+;;   `(program (x y g108566)
+;;             (movq (int 20) (var x))
+;;             (movq (int 22) (var y))
+;;             (addq (var x) (var y))
+;;             (movq (var y) (var g108566))
+;;             (movq (var g108566) (reg rax))))
 
 
 
-(let ([inter-graph (build-interference (uncover-live p))])
-  (allocate-registers inter-graph))
-|#
+;; (let ([inter-graph (build-interference (uncover-live p))])
+;;   (allocate-registers inter-graph))
+;; |#

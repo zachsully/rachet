@@ -27,8 +27,8 @@
    [else `(,e)]))
 
 
-(lower-conditionals
- `(program (stuff)
-   (if (eq? (int 1) (int 1))
-       ((movq (int 42) (reg rbx)))
-       ((movq (int 0) (reg rbx))))))
+;; (lower-conditionals
+;;  `(program (stuff)
+;;    (if (eq? (int 1) (int 1))
+;;        ((movq (int 42) (reg rbx)))
+;;        ((movq (int 0) (reg rbx))))))
