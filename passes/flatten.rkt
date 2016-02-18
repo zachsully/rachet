@@ -76,6 +76,22 @@
                                            `((assign ,tmp (not ,es_ex)))))))
                    (let-values ([(es_ex es_stmts) (flatten^ es need-var)])
                      (values `(not ,es_ex) es_stmts)))]
+   [`(vector ,args ...)
+    (let ([args^
+           (foldr (lambda (x acc)
+                    (let-values ([(ex st)
+                                  (flatten^ x need-var)])
+                      `(,(cons ex (car acc)) ,(cons st (cadr acc)))))
+                  (list '() '())
+                  args)])
+      (values `(vector ,@(car args^)) (cadr args^)))]
+   [`(vector-ref ,arg ,i)
+    (let-values ([(ex stmts) (flatten^ arg need-var)])
+      (values `(vector-ref ,ex ,i) stmts))]
+   [`(vector-set! ,arg ,i ,narg)
+    (let-values ([(exA stmtsA) (flatten^ arg need-var)]
+                 [(exN stmtsN) (flatten^ narg need-var)])
+      (values `(vector-set! ,exA ,i ,exN) (append stmtsA stmtsN)))]
    )))
 
 (define flatten
@@ -85,12 +101,14 @@
 (define unique-vars-helper
   (lambda (instr)
     (match instr
-           [`(assign ,e1 ,e2) `(,e1)]
-           [`(if ,cnd ,thn ,els) (append (unique-vars thn '()) (unique-vars els '()))]
-           [else '()])))
+     [`(assign ,e1 ,e2) `(,e1)]
+     [`(if ,cnd ,thn ,els) (append (unique-vars thn '())
+                                   (unique-vars els '()))]
+     [else '()])))
 
 (define unique-vars
   (lambda (instrs ans)
     (if (null? instrs)
         ans
-        (unique-vars (cdr instrs) (append ans (unique-vars-helper (car instrs)))))))
+        (unique-vars (cdr instrs) (append ans
+                                          (unique-vars-helper (car instrs)))))))

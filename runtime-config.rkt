@@ -1,6 +1,6 @@
 #lang racket
-
 (require racket/contract)
+
 (provide
  (contract-out
   [rootstack-size (parameter/c exact-nonnegative-integer?)]
@@ -18,5 +18,5 @@
   (make-parameter (expt 2 13)))
 
 ;; Parameter that determines what the initial heap size of the program is.
-(define heap-size 
+(define heap-size
   (make-parameter (expt 2 16)))

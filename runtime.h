@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 // At several points in our compiler we have decided to rely on the
 // fact that pointers are 64 bits wide. The stdint.h header file
 // declares a platform aware type that is guaranteed to contain
@@ -41,7 +39,4 @@ void print_int(int64_t x);
 void print_bool(int64_t x);
 
 
->>>>>>> b182c2bb7ef8c097d564837a0fb701b4ec93a21e
 
-long int read_int();
-void print_int(long int x);
