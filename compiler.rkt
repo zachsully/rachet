@@ -49,27 +49,27 @@
          (flatten
           (uniquify p))))))))
 
-(display
- (flatten
-  `(program
-    (vector-ref (vector-ref (vector (vector 42)) 0) 0))))
-(newline)
-(display
- (flatten
-  `(program
-    (+ 41 1))))
-(newline)
-(display
- (flatten
-  `(program
-    (let ([myv (vector 0)])
-      (let ([_ (vector-set! myv 0 42)])
-        myv)))))
-(newline)
-(display
- (flatten
-  `(program
-    (vector 42 51))))
+;; (display
+;;  (flatten
+;;   `(program
+;;     (vector-ref (vector-ref (vector (vector 42 32)) 0) 0))))
+;; (newline)
+;; (display
+;;  (flatten
+;;   `(program
+;;     (+ 41 1))))
+;; (newline)
+;; (display
+;;  (flatten
+;;   `(program
+;;     (let ([myv (vector 0)])
+;;       (let ([_ (vector-set! myv 0 42)])
+;;         myv)))))
+;; (newline)
+;; (display
+;;  (flatten
+;;   `(program
+;;     (vector 42 51))))
 
 
 ;; (interp-tests "r1" typecheck-R2 r1-passes interp-scheme "r1" (range 1 20))
