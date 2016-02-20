@@ -114,4 +114,5 @@
       `(program ,vs ,@(select-instructions es))]
      ['() '()]
      [else (append (select-instructions^ (car e))
-                   (select-instructions (cdr e)))])))
+                   (select-instructions (cdr e)))]
+     )))
