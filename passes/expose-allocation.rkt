@@ -1,4 +1,5 @@
 #lang racket
+(require "../uncover-types.rkt")
 (provide expose-allocation)
 
 ;;
@@ -22,7 +23,7 @@
 
 (define (expose-allocation p)
   (match p
-   [`(program ,extra ,stmts ...)
+   [`(program ,extra (type ,t) ,stmts ...)
     `(program ,extra
               ,@(foldr
                  (lambda (stmt acc)
@@ -37,7 +38,7 @@
                                  ,@(car vsets))
                                acc))]
 
-                    [`,s (append s acc)]))
+                    [`,_ (append `(,stmt) acc)]))
                  '()
                  stmts))]))
 

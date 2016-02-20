@@ -22,12 +22,13 @@
      (let ([newsym (gensym "tmp")])
       `(let([,newsym ,((uniquify^ alist) e)])
                      ,((uniquify^ (cons (cons x newsym) alist)) body)))]
-    [`(program ,e)
-     `(program ,((uniquify^ alist) e))]
+    [`(program ,e ,t)
+     `(program ,((uniquify^ alist) e) ,t)]
     [`(,op ,es ...)
      `(,op ,@(map(uniquify^ alist) es))]
     ))))
 
-(define uniquify
-  (lambda (e)
-    ((uniquify^ '()) e)))
+(define (uniquify p)
+  (match p
+   [`(program (type ,t) ,e)
+    `(program (type ,t) ,((uniquify^ '()) e))]))

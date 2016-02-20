@@ -31,7 +31,7 @@
 ;; Here is a minimal example of its use.
 (module+ test
   (require "utilities.rkt")
-  
+
   (define test-prog
     '(program (foo bar baz bam)
               (type Integer)
@@ -108,7 +108,7 @@
           ,(app (uncover-types-seq env) a-env))
      ;; Merge resulting environments making sure that they agree
      ;; any error here would be the result of assinging a variable
-     ;; with different types in each branch. 
+     ;; with different types in each branch.
      (for/fold ([env c-env]) ([(k v) (in-hash a-env)])
        (env-set env k v))]
     [otherwise env]))
@@ -128,7 +128,7 @@
   (match expr
     [(? symbol? x)  (env-ref env x)]
     [`(allocate ,l ,t) t]
-    [`(vector ,(app (uncover-type-exp env) t*) ...) `(Vector ,@t*)] 
+    [`(vector ,(app (uncover-type-exp env) t*) ...) `(Vector ,@t*)]
     [`(vector-ref ,(app (uncover-type-exp env) `(Vector ,t* ...)) ,i)
      (list-ref t* i)]
     [`(vector-set! ,v ,i ,e) 'Void]

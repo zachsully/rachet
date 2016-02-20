@@ -1,6 +1,5 @@
 #lang racket
 (require "../utilities.rkt")
-(require "uniquify.rkt")
 (require racket/pretty)
 (provide flatten)
 
@@ -26,10 +25,6 @@
     (let-values ([(rhs_ex rhs_stmts) (flatten^ rhs #f)]
                  [(body_ex body_stmts) (flatten^ body need-var)])
       (values body_ex (append rhs_stmts `((assign ,x ,rhs_ex)) body_stmts)))]
-
-   [`(program ,e) (let-values ([(ex rhs) (flatten^ e need-var)])
-   (let ([vars (remove-duplicates (unique-vars rhs '()))])
-     `(program ,vars ,@(append rhs `((return ,ex))))))]
 
    [`(read) (if need-var
               (let ([tmp (gensym "read.")])
@@ -137,9 +132,14 @@
 
    )))
 
-(define flatten
-  (lambda (e)
-    (flatten^ e #t)))
+(define (flatten p)
+  (match p
+   [`(program ,t ,expr)
+    (let-values ([(ex rhs) (flatten^ expr #t)])
+      (let ([vars (remove-duplicates (unique-vars rhs '()))])
+        `(program ,vars
+                  ,t
+                  ,@(append rhs `((return ,ex))))))]))
 
 (define unique-vars-helper
   (lambda (instr)

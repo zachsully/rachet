@@ -15,35 +15,36 @@
          "passes/print-x86.rkt"
          "passes/typecheck.rkt")
 
-(provide r1-passes r2-passes r3-passes compile-prog)
+(provide r3-passes compile-prog)
 
 
-(define r1-passes `(("uniquify",uniquify,interp-scheme)
-                    ("flatten",flatten,interp-C)
-                    ("select instructions",select-instructions,interp-x86)
-                    ("uncover-live",uncover-live,interp-x86)
-                    ("build-interference",build-interference,interp-x86)
-                    ("allocate-registers",allocate-registers,interp-x86)
-                    ("assign homes",assign-homes,interp-x86)
-                    ("patch instructions",patch-instructions,interp-x86)
-                    ("print-x86",print-x86, #f)
-                    ))
+;; (define r1-passes `(("uniquify",uniquify,interp-scheme)
+;;                     ("flatten",flatten,interp-C)
+;;                     ("select instructions",select-instructions,interp-x86)
+;;                     ("uncover-live",uncover-live,interp-x86)
+;;                     ("build-interference",build-interference,interp-x86)
+;;                     ("allocate-registers",allocate-registers,interp-x86)
+;;                     ("assign homes",assign-homes,interp-x86)
+;;                     ("patch instructions",patch-instructions,interp-x86)
+;;                     ("print-x86",print-x86, #f)
+;;                     ))
 
-(define r2-passes `(("uniquify",uniquify,interp-scheme)
-                    ("flatten",flatten,interp-C)
-                    ("select instructions",select-instructions,interp-x86)
-                    ("uncover-live",uncover-live,interp-x86)
-                    ("build-interference",build-interference,interp-x86)
-                    ("allocate-registers",allocate-registers,interp-x86)
-                    ("assign homes",assign-homes,interp-x86)
-                    ("lower-conditionals",lower-conditionals,interp-x86)
-                    ("patch instructions",patch-instructions,interp-x86)
-                    ("print-x86",print-x86, #f)
-                    ))
+;; (define r2-passes `(("uniquify",uniquify,interp-scheme)
+;;                     ("flatten",flatten,interp-C)
+;;                     ("select instructions",select-instructions,interp-x86)
+;;                     ("uncover-live",uncover-live,interp-x86)
+;;                     ("build-interference",build-interference,interp-x86)
+;;                     ("allocate-registers",allocate-registers,interp-x86)
+;;                     ("assign homes",assign-homes,interp-x86)
+;;                     ("lower-conditionals",lower-conditionals,interp-x86)
+;;                     ("patch instructions",patch-instructions,interp-x86)
+;;                     ("print-x86",print-x86, #f)
+;;                     ))
 
-(define r3-passes `(("uniquify",uniquify,interp-scheme)
-                    ("flatten",flatten,interp-C)
-                    ("expose-allocation",expose-allocation,interp-C)
+(define r3-passes `(("typecheck",typecheck,#f)
+                    ("uniquify",uniquify,#f)
+                    ("flatten",flatten,#f)
+                    ("expose-allocation",expose-allocation,#f)
                     ("select instructions",select-instructions,interp-x86)
                     ("uncover-live",uncover-live,interp-x86)
                     ("build-interference",build-interference,interp-x86)
@@ -57,13 +58,13 @@
 ;;;;;
 ;;;;; CLASS TESTS
 ;;;;;
-(interp-tests "r1" typecheck r1-passes interp-scheme "r1" (range 1 20))
-(interp-tests "r1a" typecheck r1-passes interp-scheme "r1a" (range 1 9))
-(interp-tests "r2" typecheck r2-passes interp-scheme "r2" (range 1 10))
-(compiler-tests "r1-passes" typecheck r1-passes "r1" (range 1 20))
-(compiler-tests "r1a-passes" typecheck r1-passes "r1a" (range 1 9))
-(compiler-tests "r2-passes" typecheck r2-passes "r2" (range 1 20))
-(display "tests passed!") (newline)
+;; (interp-tests "r1" typecheck r3-passes interp-scheme "r1" (range 1 20))
+;; (interp-tests "r1a" typecheck r3-passes interp-scheme "r1a" (range 1 9))
+;; (interp-tests "r2" typecheck r3-passes interp-scheme "r2" (range 1 10))
+;; (compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
+;; (compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
+;; (compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 20))
+;; (display "tests passed!") (newline)
 
 
 
@@ -71,13 +72,32 @@
 ;;;;; UNIT TESTING
 ;;;;;
 (define (compile-prog p)
-  (assign-homes
-   (allocate-registers
+ (print-x86
+  (patch-instructions
+   (lower-conditionals
+    (assign-homes
+     (allocate-registers
       (build-interference
        (uncover-live
         (select-instructions
-         (flatten
-          (uniquify p))))))))
+         (expose-allocation
+          (flatten
+           (uniquify
+            (typecheck p)))))))))))))
+
+(define (mini p)
+ (expose-allocation
+  (flatten
+   (uniquify
+    (typecheck p)))))
+
+(define example `(program (vector-ref (vector-ref (vector (vector 42)) 0) 0)))
+;; (display (compile-prog `(program (let ([x 64]) (let ([y x]) y)))))
+;; ;; (uniquify example)
+;; (flatten (uniquify (typecheck `(program 42))))
+;; (newline)
+;; (expose-allocation (flatten (uniquify (typecheck example))))
+(mini example)
 
 ;; (display
 ;;  (flatten
