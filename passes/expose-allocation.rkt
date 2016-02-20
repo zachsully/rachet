@@ -44,16 +44,15 @@
                       [`,_ (append `(,stmt) acc)])) '() stmts)])
       (void-vec-sets `(program ,(uncover-types p)
                                ,t
-                               ,@(cons `(initialize 10000 10000)
-                                       stmts^))))]))
+                               ,@stmts^)))]))
 
 (define (vector-setting var es)
  ((lambda (f)
-    (foldr f `(() . 0) es))
+    (foldl f `(() . 0) es))
   (lambda (e acc)
     (let ([tmp (gensym "void.")])
       (cons (append (car acc)
-                  `((assign ,tmp (vector-set! ,var ,(cdr acc) ,e))))
+                    `((assign ,tmp (vector-set! ,var ,(cdr acc) ,e))))
           (+ 1 (cdr acc)))))))
 
 ;; take program and turns vector-sets! into assign... as well as adds them to
@@ -69,4 +68,6 @@
                      [`,_ acc]))
                   '()
                   stmts)])
-      `(program ,(append vars voids) ,t ,@stmts))]))
+      `(program ,(append vars voids)
+                ,t
+                ,@(cons `(initialize 10000 10000) stmts)))]))

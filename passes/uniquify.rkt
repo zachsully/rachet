@@ -11,24 +11,20 @@
 ;;
 
 
-(define uniquify^
- (lambda (alist)
-  (lambda (e)
-   (match e
-    [(? symbol?) (lookup e alist)]
+(define (uniquify^ env e)
+  (match e
+    [(? symbol?) (lookup e env)]
     [(? integer?) e]
     [(? boolean?) e]
     [`(let([,x ,e]) ,body)
      (let ([newsym (gensym "tmp")])
-      `(let([,newsym ,((uniquify^ alist) e)])
-                     ,((uniquify^ (cons (cons x newsym) alist)) body)))]
-    [`(program ,e ,t)
-     `(program ,((uniquify^ alist) e) ,t)]
+      `(let([,newsym ,(uniquify^ env e)])
+                     ,(uniquify^ (cons (cons x newsym) env) body)))]
     [`(,op ,es ...)
-     `(,op ,@(map(uniquify^ alist) es))]
-    ))))
+     `(,op ,@(map (lambda (e) (uniquify^ env e)) es))]
+    ))
 
 (define (uniquify p)
   (match p
    [`(program ,e)
-    `(program ,((uniquify^ '()) e))]))
+    `(program ,(uniquify^ '() e))]))

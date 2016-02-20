@@ -18,33 +18,10 @@
 
 (provide r3-passes compile-prog)
 
-
-;; (define r1-passes `(("uniquify",uniquify,interp-scheme)
-;;                     ("flatten",flatten,interp-C)
-;;                     ("select instructions",select-instructions,interp-x86)
-;;                     ("uncover-live",uncover-live,interp-x86)
-;;                     ("build-interference",build-interference,interp-x86)
-;;                     ("allocate-registers",allocate-registers,interp-x86)
-;;                     ("assign homes",assign-homes,interp-x86)
-;;                     ("patch instructions",patch-instructions,interp-x86)
-;;                     ("print-x86",print-x86, #f)
-;;                     ))
-
-;; (define r2-passes `(("uniquify",uniquify,interp-scheme)
-;;                     ("flatten",flatten,interp-C)
-;;                     ("select instructions",select-instructions,interp-x86)
-;;                     ("uncover-live",uncover-live,interp-x86)
-;;                     ("build-interference",build-interference,interp-x86)
-;;                     ("allocate-registers",allocate-registers,interp-x86)
-;;                     ("assign homes",assign-homes,interp-x86)
-;;                     ("lower-conditionals",lower-conditionals,interp-x86)
-;;                     ("patch instructions",patch-instructions,interp-x86)
-;;                     ("print-x86",print-x86, #f)
-;;                     ))
-
 (define r3-passes `(("uniquify",uniquify,interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("expose-allocation",expose-allocation,interp-C)
+                    ("uncover-call-live-roots",uncover-call-live-roots,interp-C)
                     ("select instructions",select-instructions,interp-x86)
                     ("uncover-live",uncover-live,interp-x86)
                     ("build-interference",build-interference,interp-x86)
@@ -72,25 +49,40 @@
 ;;;;; UNIT TESTING
 ;;;;;
 (define (compile-prog p passes)
- (foldl (lambda (pass prog) (pass prog)) p passes))
+ (pretty-print (foldl (lambda (pass prog) (pass prog)) p passes)))
+(define (compile-progs ps passes)
+  (map (lambda (p)
+         (pretty-print p)
+         (display "  =>") (newline)
+         (compile-prog p passes)
+         (newline)) ps))
 
 
-(define example `(program (vector-ref (vector-ref (vector (vector 42)) 0) 0)))
-(define example2 `(program 42))
-(compile-prog example `(,uniquify
-                         ,flatten
-                         ,expose-allocation
-                         ,uncover-call-live-roots
-                         ;; ,select-instructions
-                         ;; ,uncover-live
-                         ;; ,build-interference
-                         ;; ,allocate-registers
-                         ;; ,assign-homes
-                         ;; ,lower-conditionals
-                         ;; ,patch-instructions
-                         ;; ,print-x86
-                         ,pretty-print
-                         ))
+(define test1 `(program (vector-ref (vector-ref (vector (vector 42)) 0) 0)))
+(define test2 `(program (vector-ref (vector #t #f 0 42 9) 3)))
+(define test3 `(program 42))
+(define test4 `(program (if (eq? 42 42) (+ 2 40) 567)))
+(define test5 `(program (let ([x (vector #t)])
+                          (let ([y (vector #f)])
+                            (let ([z (vector 42)]) z)))))
+(compile-progs
+ `(,test1
+   ;; ,test2
+   ;; ,test5
+   )
+ `(,uniquify
+   ,flatten
+   ,expose-allocation
+   ,uncover-call-live-roots
+   ,select-instructions
+   ;; ,uncover-live
+   ;; ,build-interference
+   ;; ,allocate-registers
+   ;; ,assign-homes
+   ;; ,lower-conditionals
+   ;; ,patch-instructions
+   ;; ,print-x86
+   ))
 
 ;; (display
 ;;  (flatten
