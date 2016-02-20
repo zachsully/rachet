@@ -30,5 +30,5 @@
 
 (define (uniquify p)
   (match p
-   [`(program (type ,t) ,e)
-    `(program (type ,t) ,((uniquify^ '()) e))]))
+   [`(program ,e)
+    `(program ,((uniquify^ '()) e))]))

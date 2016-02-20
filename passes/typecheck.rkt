@@ -128,7 +128,7 @@
 
 (define (typecheck e)
   (match e
-   [`(program ,e) `(program (type ,(typecheck^ '() e)) ,e)]))
+   [`(program ,e) (typecheck^ '() e)]))
 
 
 ;; (typecheck `(program (vector #t)))

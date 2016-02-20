@@ -1,5 +1,6 @@
 #lang racket
 (require "../utilities.rkt")
+(require "typecheck.rkt")
 (require racket/pretty)
 (provide flatten)
 
@@ -134,11 +135,11 @@
 
 (define (flatten p)
   (match p
-   [`(program ,t ,expr)
+   [`(program ,expr)
     (let-values ([(ex rhs) (flatten^ expr #t)])
       (let ([vars (remove-duplicates (unique-vars rhs '()))])
         `(program ,vars
-                  ,t
+                  (type ,(typecheck p))
                   ,@(append rhs `((return ,ex))))))]))
 
 (define unique-vars-helper

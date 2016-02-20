@@ -45,12 +45,13 @@
           [x^ (select-instructions^ x)])
       `((movq ,x^ ,v^)))]
    [`(return ,v) `((movq ,(select-instructions^ v) (reg rax)))]
+   [`(initialize ,_ ,_) `(,e)]
    [`(,x ...) (select-instructions^ (car x))]))
 
 (define select-instructions
   (lambda (e)
     (match e
-     [`(program ,vs ,es ...) `(program ,vs ,@(select-instructions es))]
+     [`(program ,vs (type ,t) ,es ...) `(program ,vs ,@(select-instructions es))]
      ['() '()]
      [else (append (select-instructions^ (car e))
                    (select-instructions (cdr e)))])))

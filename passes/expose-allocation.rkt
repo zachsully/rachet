@@ -1,4 +1,5 @@
 #lang racket
+(require "../utilities.rkt")
 (require "../uncover-types.rkt")
 (provide expose-allocation)
 
@@ -23,39 +24,49 @@
 
 (define (expose-allocation p)
   (match p
-   [`(program ,extra (type ,t) ,stmts ...)
-    `(program ,extra
-              ,@(foldr
-                 (lambda (stmt acc)
-                   (match stmt
-                    [`(assign ,var (vector ,es ...))
-                     (let* ([vsets (vector-setting var es)]
-                            [bytes (+ 8 (* 8 (cdr vsets)))])
-                       (append `((if (collection-needed? ,bytes)
-                                     ((collect ,bytes))
-                                     ())
-                                 (assign ,var (allocate ,(length es) 'foo))
-                                 ,@(car vsets))
-                               acc))]
+   [`(program ,extra ,t ,stmts ...)
+    (let* ([types (uncover-types p)]
+           [stmts^ (foldr
+                    (lambda (stmt acc)
+                     (match stmt
+                      [`(assign ,var (vector ,es ...))
+                       (let* ([vsets (vector-setting var es)]
+                              [bytes (+ 8 (* 8 (cdr vsets)))])
+                         (append `((if (collection-needed? ,bytes)
+                                       ((collect ,bytes))
+                                       ())
+                                   (assign ,var
+                                           (allocate ,(length es)
+                                                     ,(lookup var types)))
+                                   ,@(car vsets))
+                                 acc))]
 
-                    [`,_ (append `(,stmt) acc)]))
-                 '()
-                 stmts))]))
+                      [`,_ (append `(,stmt) acc)])) '() stmts)])
+      (void-vec-sets `(program ,(uncover-types p)
+                               ,t
+                               ,@(cons `(initialize 10000 10000)
+                                       stmts^))))]))
 
 (define (vector-setting var es)
  ((lambda (f)
     (foldr f `(() . 0) es))
   (lambda (e acc)
-    (cons (append (car acc)
-                  `((vector-set! ,var ,(cdr acc) ,e)))
-          (+ 1 (cdr acc))))))
+    (let ([tmp (gensym "void.")])
+      (cons (append (car acc)
+                  `((assign ,tmp (vector-set! ,var ,(cdr acc) ,e))))
+          (+ 1 (cdr acc)))))))
 
-;; (vector-setting 'foo (range 1 10))
-;; (range 1 10)
-;; (expose-allocation
-;;  `(program (t.1 t.2 t.3 t.4)
-;;    (assign t.1 (vector 42))
-;;    (assign t.2 (vector t.1))
-;;    (assign t.3 (vector-ref t.2 0))
-;;    (assign t.4 (vector-reg t.3 0))
-;;    (return t.4)))
+;; take program and turns vector-sets! into assign... as well as adds them to
+;; the variables
+(define (void-vec-sets p)
+  (match p
+   [`(program ,vars ,t ,stmts ...)
+    (let ([voids (foldr
+                  (lambda (s acc)
+                    (match s
+                     [`(assign ,v (vector-set! ,_ ,_ ,_))
+                      (cons (cons v 'Void) acc)]
+                     [`,_ acc]))
+                  '()
+                  stmts)])
+      `(program ,(append vars voids) ,t ,@stmts))]))

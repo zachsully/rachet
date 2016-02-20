@@ -1,6 +1,7 @@
 #lang racket
 (require "utilities.rkt")
 (require "interp.rkt")
+(require racket/pretty)
 (require "passes/uniquify.rkt"
          "passes/flatten.rkt"
          "passes/select-instructions.rkt"
@@ -41,10 +42,9 @@
 ;;                     ("print-x86",print-x86, #f)
 ;;                     ))
 
-(define r3-passes `(("typecheck",typecheck,#f)
-                    ("uniquify",uniquify,#f)
-                    ("flatten",flatten,#f)
-                    ("expose-allocation",expose-allocation,#f)
+(define r3-passes `(("uniquify",uniquify,interp-scheme)
+                    ("flatten",flatten,interp-C)
+                    ("expose-allocation",expose-allocation,interp-C)
                     ("select instructions",select-instructions,interp-x86)
                     ("uncover-live",uncover-live,interp-x86)
                     ("build-interference",build-interference,interp-x86)
@@ -71,33 +71,26 @@
 ;;;;;
 ;;;;; UNIT TESTING
 ;;;;;
-(define (compile-prog p)
- (print-x86
-  (patch-instructions
-   (lower-conditionals
-    (assign-homes
-     (allocate-registers
-      (build-interference
-       (uncover-live
-        (select-instructions
-         (expose-allocation
-          (flatten
-           (uniquify
-            (typecheck p)))))))))))))
+(define (compile-prog p passes)
+ (foldl (lambda (pass prog) (pass prog)) p passes))
 
-(define (mini p)
- (expose-allocation
-  (flatten
-   (uniquify
-    (typecheck p)))))
 
 (define example `(program (vector-ref (vector-ref (vector (vector 42)) 0) 0)))
-;; (display (compile-prog `(program (let ([x 64]) (let ([y x]) y)))))
-;; ;; (uniquify example)
-;; (flatten (uniquify (typecheck `(program 42))))
-;; (newline)
-;; (expose-allocation (flatten (uniquify (typecheck example))))
-(mini example)
+(define example2 `(program 42))
+(compile-prog example `(,uniquify
+                         ,flatten
+                         ,expose-allocation
+                         ,uncover-call-live-roots
+                         ;; ,select-instructions
+                         ;; ,uncover-live
+                         ;; ,build-interference
+                         ;; ,allocate-registers
+                         ;; ,assign-homes
+                         ;; ,lower-conditionals
+                         ;; ,patch-instructions
+                         ;; ,print-x86
+                         ,pretty-print
+                         ))
 
 ;; (display
 ;;  (flatten
