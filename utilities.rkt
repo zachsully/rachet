@@ -10,7 +10,7 @@
 	 make-graph add-edge adjacent vertices print-dot
 	 general-registers registers-for-alloc caller-save callee-save
 	 arg-registers register->color registers align
-         byte-reg->full-reg)
+         byte-reg->full-reg print-by-type)
 
 ;; debug state is a nonnegative integer.
 ;; The easiest way to increment it is passing the -d option
@@ -368,8 +368,8 @@
            [output (if (file-exists? (format "tests/~a.res" test-name))
                        (call-with-input-file
                          (format "tests/~a.res" test-name)
-                         (lambda (f) (string->number (read-line f))))
-                       42)]
+                         (lambda (f) (read-line f)))
+                       "42")]
            [progout (if typechecks (process (format "./a.out~a" input)) 'type-error)]
            )
       ;; process returns a list, it's first element is stdout
@@ -380,11 +380,11 @@
              (error (format "test ~a passed typechecking but should not have." test-name)) '())
          (control-fun 'wait)
          (cond [(eq? (control-fun 'status) 'done-ok)
-                (let ([result (string->number (read-line (car progout)))])
-                  (if (eq? result output)
+                (let ([result (read-line (car progout))])
+                  (if (eq? (string->symbol result) (string->symbol output))
                       (begin (display test-name)(display " ")(flush-output))
-                      (error (format "test ~a failed, output: ~a" 
-                                     test-name result))))]
+                      (error (format "test ~a failed, output: ~a, expected ~a" 
+                                     test-name result output))))]
                [else
                 (error
                  (format "test ~a error in x86 execution, exit code: ~a" 
@@ -393,7 +393,6 @@
          (close-input-port in2)
          (close-output-port out)])
       )))
-
 
 ;; Takes a function of 1 argument (or #f) and Racket expression, and
 ;; returns whether the expression is well-typed. If the first argument
@@ -474,6 +473,32 @@
 	 n]
 	[else
 	 (+ n (- alignment (modulo n alignment)))]))
+
+; Produces a string containing x86 instructions that print whatever is
+; currently in %rax. Will clobber the contents of (potentially)
+; r12-r15, so this should only be used at the end of a program (and
+; before moving 0 to rax).  Note that the "[depth 12]" part here is an
+; optional argument, which is used internally.  Call this function
+; with a single argument, like (print-by-type '(Vector Integer
+; Boolean)).  If you try to print nested vectors that are more than 4
+; levels deep, the 5th vector will be printed as #(...).
+(define (print-by-type ty [depth 12])
+  (define (mov-and-print depth) 
+    (lambda (ty index)
+      (format "\tmovq\t~a(%r~a), %rax\n~a" (* 8 (+ 1 index)) depth (print-by-type ty (+ 1 depth)))))
+  (match ty
+    ['Void (format "\tcallq\t~a\n" (label-name "print_void"))]
+    ['Integer 
+     (format "\tmovq\t%rax, %rdi\n\tcallq\t~a\n" (label-name "print_int"))]
+    ['Boolean 
+     (format "\tmovq\t%rax, %rdi\n\tcallq\t~a\n" (label-name "print_bool"))]
+    [`(Vector ,tys ...)
+     (if (> depth 15)
+         (format "\tmovq\t%rax, %rdi\n\tcallq\t~a\n" (label-name "print_ellipsis"))
+         (string-join (map (mov-and-print depth) tys (range (length tys)))
+                      (format "\tcallq\t~a\n" (label-name "print_space"))
+                      #:before-first (format "\tmovq\t%rax, %r~a\n\tcallq\t~a\n" depth (label-name "print_vecbegin"))
+                      #:after-last (format "\tcallq\t~a\n" (label-name "print_vecend"))))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Graph ADT
