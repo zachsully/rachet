@@ -153,5 +153,6 @@
   (lambda (instrs ans)
     (if (null? instrs)
         ans
-        (unique-vars (cdr instrs) (append ans
-                                          (unique-vars-helper (car instrs)))))))
+        (unique-vars (cdr instrs)
+                     (append ans
+                             (unique-vars-helper (car instrs)))))))

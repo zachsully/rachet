@@ -18,6 +18,7 @@
 ;;  (vector-set! <lhs> 0 <f>)
 ;;   ..
 ;;  (vector-set! <lhs> (len -1) <e>)
+;;
 
 (define (expose-allocation p)
   (match p
