@@ -45,11 +45,26 @@
     `((movq ,(select-instructions^ es) ,(select-instructions^ v))
       (xorq (int 1) ,(select-instructions^ v)))]
 
+   [`(assign ,v (allocate ,len (Vector ,ts ...)))
+    (let ([v^ (select-instructions^ v)])
+      `((movq (global-value free_ptr) ,v^)
+        (addq (int ,(* 8 (+ 1 len))) (global-value free_ptr))
+        (movq (int TAG) (offset ,v^ 0))))]
+
+   [`(assign ,v (vector-set! ,vec ,n ,arg))
+    `((movq ,(select-instructions^ arg)
+            (offset ,(select-instructions^ vec) ,(* 8 (+ 1 n)))))]
+
+   [`(assign ,v (vector-ref ,vec ,n))
+    `((movq (offset ,(select-instructions^ vec) ,(* 8 (+ 1 n)))
+            ,v))]
+
    [`(if (eq? ,bool ,cnd) ,thn ,els)
     `((if (eq? ,(select-instructions^ bool) ,(select-instructions^ cnd))
           ,(select-instructions^ thn)
           ,(select-instructions^ els)))]
 
+   ;; Generic assign statement
    [`(assign ,v ,x)
     (let ([v^ (select-instructions^ v)]
           [x^ (select-instructions^ x)])
@@ -70,20 +85,20 @@
    [`(call-live-roots ,vs (collect ,bytes))
     (append (car (foldr (lambda (v acc)
                      (cons (append `((movq (var ,v)
-                                     (offset (var rootstack.prev)
+                                     (offset (var ROOTSTACK.prev)
                                              ,(* 8 (- 1 (cdr acc))))))
                                    (car acc))
                            (+ 1 (cdr acc))))
                    '(() . 0)
                    vs))
-            `((movq rootstack.prev rootstack.new)
-              (addq (int ,(length vs)) rootstack.new)
-              (movq (var rootstack.new) (reg rdi))
+            `((movq ROOTSTACK.prev ROOTSTACK.new)
+              (addq (int ,(length vs)) ROOTSTACK.new)
+              (movq (var ROOTSTACK.new) (reg rdi))
               (movq (int ,bytes) (reg rsi))
               (callq collect))
             (car (foldr (lambda (v acc)
                      (cons (append `((movq
-                                      (offset (var rootstack.prev)
+                                      (offset (var ROOTSTACK.prev)
                                              ,(* 8 (- 1 (cdr acc))))
                                       (var ,v)
                                      ))
@@ -97,12 +112,6 @@
       (movq (int ,heaplen) (reg rsi))
       (callq initialize)
       (movq (global-value rootstack_begin) (var rootstack)))]
-
-   [`(allocate ,_ ,_) e]
-
-   [`(vector-set! ,_ ,_ ,_) e]
-
-   [`(vector-ref ,_ ,_) e]
 
    [`(,x ...) (select-instructions^ (car x))]
    ))
