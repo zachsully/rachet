@@ -57,7 +57,6 @@
          (compile-prog p passes)
          (newline)) ps))
 
-
 (define test1 `(program (vector-ref (vector-ref (vector (vector 42)) 0) 0)))
 (define test2 `(program (vector-ref (vector #t #f 0 42 9) 3)))
 (define test3 `(program 42))
@@ -66,7 +65,9 @@
                           (let ([y (vector #f)])
                             (let ([z (vector 42)]) z)))))
 (compile-progs
- `(,test1
+ `(
+   (program 42)
+   ,test1
    ;; ,test2
    ;; ,test5
    )
@@ -83,25 +84,3 @@
    ;; ,patch-instructions
    ;; ,print-x86
    ))
-
-;; (display
-;;  (flatten
-;;   `(program
-;;     (vector-ref (vector-ref (vector (vector 42 32)) 0) 0))))
-;; (newline)
-;; (display
-;;  (flatten
-;;   `(program
-;;     (+ 41 1))))
-;; (newline)
-;; (display
-;;  (flatten
-;;   `(program
-;;     (let ([myv (vector 0)])
-;;       (let ([_ (vector-set! myv 0 42)])
-;;         myv)))))
-;; (newline)
-;; (display
-;;  (flatten
-;;   `(program
-;;     (vector 42 51))))

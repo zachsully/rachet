@@ -48,7 +48,8 @@
      "\t" (symbol->string op) "\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
    [`(,op ,q) #:when (member op '(negq sete))
     (string-append "\t" (symbol->string op) "\t" (print-x86^ q) "\n")]
-   [`(callq read_int) "\tcallq\tread_int\n"]
+   [`(callq ,func)
+    (string-append "\tcallq\t" (symbol->string func) "\n")]
    [`(,op ,lbl) #:when(member op '(je jmp))
      (string-append "\t" (symbol->string op) "\t" (symbol->string lbl) "\n")]
    [`(label ,lbl)
@@ -58,4 +59,6 @@
    [`(stack ,loc)
     (string-append (number->string loc) "(%rbp)")]
    [`(,type ,r) #:when (member type '(reg byte-reg))
-    (string-append "%" (symbol->string r))]))
+    (string-append "%" (symbol->string r))]
+   [`(global-value ,v)
+    (string-append (symbol->string v) "(%rip)")]))
