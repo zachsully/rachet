@@ -34,9 +34,9 @@
          [t2 (typecheck^ env e2)])
     (cond
     [(not (equal? 'Integer t1))
-     (error 'typecheck^ "'+' expects a Integer" e1)]
+     (error 'typecheck^ "'+' expects a Integer")]
     [(not (equal? 'Integer t2))
-     (error 'typecheck^ "'+' expects a Integer" e2)]
+     (error 'typecheck^ "'+' expects a Integer")]
     [else 'Integer]))]
 
   [`(read) 'Integer]
@@ -117,7 +117,7 @@
                [(< (length args) i)
                 (error 'typecheck^
                        "'vector-set!' index does not exist in vector")]
-               [(not (eq? (car (drop args i)) nt))
+               [(not (equal? (car (drop args i)) nt))
                 (error 'typecheck^
                        "'vector-set!' attempting to change type of vector-field")]
                [else 'Void])]
@@ -129,9 +129,3 @@
 (define (typecheck e)
   (match e
    [`(program ,e) (typecheck^ '() e)]))
-
-
-;; (typecheck `(program (vector #t)))
-;; (typecheck `(program (vector-ref (vector 4 #t #f) 0)))
-;; (typecheck `(program (let ([v (vector 4 #t #f)])
-;;                        (vector-set! v 0 5))))

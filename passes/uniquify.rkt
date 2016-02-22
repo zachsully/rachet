@@ -17,7 +17,7 @@
     [(? integer?) e]
     [(? boolean?) e]
     [`(let([,x ,e]) ,body)
-     (let ([newsym (gensym "tmp")])
+     (let ([newsym (gensym "tmp.")])
       `(let([,newsym ,(uniquify^ env e)])
                      ,(uniquify^ (cons (cons x newsym) env) body)))]
     [`(,op ,es ...)
