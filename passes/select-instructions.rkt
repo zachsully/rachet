@@ -50,8 +50,8 @@
    [`(assign ,v (allocate ,len (Vector ,ts ...)))
     (let ([v^ (select-instructions^ v rs)]
 	  [tag (bitwise-ior
-		(arithmetic-shift  7)
-		(arithmetic-shift len 6)
+		(arithmetic-shift (pointer-mask ts) 7)
+		(arithmetic-shift len 1)
 		1)])
       `((movq (global-value free_ptr) ,v^)
 	(addq (int ,(* 8 (+ 1 len))) (global-value free_ptr))
@@ -172,3 +172,17 @@
         (get-vars (cdr instrs)
 		  (append ans
 			  (get-vars-helper (car instrs)))))))
+
+;; returns the 50 bit pointer mask given a vectors types
+(define (pointer-mask types)
+  ((lambda (f)
+     (car (foldr f `(0 . 0) types)))
+   (lambda (t acc)
+     (let ([mask (car acc)]
+	   [n    (cdr acc)])
+       `(,(bitwise-ior (arithmetic-shift (match t
+					  [`(Vector ,_ ...) 1]
+					  [else 0])
+					 n)
+		       mask)
+	 . ,(+ 1 n))))))
