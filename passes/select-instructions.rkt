@@ -48,10 +48,14 @@
       (xorq (int 1) ,(select-instructions^ v rs)))]
 
    [`(assign ,v (allocate ,len (Vector ,ts ...)))
-    (let ([v^ (select-instructions^ v rs)])
+    (let ([v^ (select-instructions^ v rs)]
+	  [tag (bitwise-ior
+		(arithmetic-shift  7)
+		(arithmetic-shift len 6)
+		1)])
       `((movq (global-value free_ptr) ,v^)
 	(addq (int ,(* 8 (+ 1 len))) (global-value free_ptr))
-	(movq (int TAG) (offset ,v^ 0))))]
+	(movq (int ,tag) (offset ,v^ 0))))]
 
    [`(assign ,v (vector-set! ,vec ,n ,arg))
     `((movq ,(select-instructions^ arg rs)
@@ -80,7 +84,7 @@
    ;; Checks if there is enough space in the from space
    [`(if (collection-needed? ,bytes) ,thn ,els)
     (let ([end-data (gensym "end-data.")]
-	  [lt      (gensym "lt.")])
+	  [lt       (gensym "lt.")])
       `((movq (global-value free_ptr) (var ,end-data))
 	(addq (int ,bytes) (var ,end-data))
 	(cmpq (var ,end-data) (global-value fromspace_end))
