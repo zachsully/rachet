@@ -98,7 +98,7 @@
     (append
      (push-live-roots vs rs)
      (let ([newrs (gensym "rootstack.")])
-       `((movq ,rs (var ,newrs))
+       `((movq (var ,rs) (var ,newrs))
 	 (addq (int ,(length vs)) (var ,newrs))
 	 (movq (var ,newrs) (reg rdi))
 	 (movq (int ,bytes) (reg rsi))
@@ -116,19 +116,18 @@
 
    ))
 
-(define select-instructions
-  (lambda (e)
-    (match e
-     [`(program ,vs (type ,t) ,es ...)
-      (let ([instr^ (select-instructions es)])
-	`(program ,(remove-duplicates
-		    (append vs (get-vars instr^ '())))
-		  ,@instr^))]
-     ['() '()]
-     [else (let ([rs (gensym "rootstack.")])
-	     (append (select-instructions^ (car e) rs)
-		     (select-instructions (cdr e))))]
-     )))
+(define (select-instructions e)
+ (match e
+  [`(program ,vs ,type ,stmts ...)
+   ((lambda (stmts^)
+      `(program ,(remove-duplicates (append vs (get-vars stmts^ '())))
+	       ,type
+	       ,@stmts^))
+    (let ([rs (gensym "rootstack.")])
+      ((lambda (f) (foldr f '() stmts))
+       (lambda (stmt acc)
+	 (append (select-instructions^ stmt rs) acc)))))]
+  ))
 
 (define (push-live-roots vars rootstack)
   (car

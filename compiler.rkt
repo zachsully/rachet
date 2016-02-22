@@ -22,14 +22,14 @@
                     ("flatten",flatten,interp-C)
                     ("expose-allocation",expose-allocation,interp-C)
                     ("uncover-call-live-roots",uncover-call-live-roots,interp-C)
-                    ("select instructions",select-instructions,interp-x86)
-                    ("uncover-live",uncover-live,interp-x86)
-                    ("build-interference",build-interference,interp-x86)
-                    ("allocate-registers",allocate-registers,interp-x86)
-                    ("assign homes",assign-homes,interp-x86)
-                    ("lower-conditionals",lower-conditionals,interp-x86)
-                    ("patch instructions",patch-instructions,interp-x86)
-                    ("print-x86",print-x86, #f)
+                    ;; ("select instructions",select-instructions,interp-x86)
+                    ;; ("uncover-live",uncover-live,interp-x86)
+                    ;; ("build-interference",build-interference,interp-x86)
+                    ;; ("allocate-registers",allocate-registers,interp-x86)
+                    ;; ("assign homes",assign-homes,interp-x86)
+                    ;; ("lower-conditionals",lower-conditionals,interp-x86)
+                    ;; ("patch instructions",patch-instructions,interp-x86)
+                    ;; ("print-x86",print-x86, #f)
                     ))
 
 ;;;;;
@@ -38,6 +38,7 @@
 ;; (interp-tests "r1" typecheck r3-passes interp-scheme "r1" (range 1 20))
 ;; (interp-tests "r1a" typecheck r3-passes interp-scheme "r1a" (range 1 9))
 ;; (interp-tests "r2" typecheck r3-passes interp-scheme "r2" (range 1 10))
+(interp-tests "r3" typecheck r3-passes interp-scheme "r3" (range 1 16))
 ;; (compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
 ;; (compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 20))
@@ -64,23 +65,24 @@
 (define test5 `(program (let ([x (vector #t)])
                           (let ([y (vector #f)])
                             (let ([z (vector 42)]) z)))))
-(compile-progs
- `(
-   (program 42)
-   ,test1
-   ;; ,test2
-   ;; ,test5
-   )
- `(,uniquify
-   ,flatten
-   ,expose-allocation
-   ,uncover-call-live-roots
-   ,select-instructions
-   ;; ,uncover-live
-   ;; ,build-interference
-   ;; ,allocate-registers
-   ;; ,assign-homes
-   ;; ,lower-conditionals
-   ;; ,patch-instructions
-   ;; ,print-x86
-   ))
+
+;; (compile-progs
+;;  `(
+;;    (program 42)
+;;    ,test1
+;;    ;; ,test2
+;;    ;; ,test5
+;;    )
+;;  `(,uniquify
+;;    ,flatten
+;;    ,expose-allocation
+;;    ,uncover-call-live-roots
+;;    ,select-instructions
+;;    ;; ,uncover-live
+;;    ;; ,build-interference
+;;    ;; ,allocate-registers
+;;    ;; ,assign-homes
+;;    ;; ,lower-conditionals
+;;    ;; ,patch-instructions
+;;    ;; ,print-x86
+;;    ))
