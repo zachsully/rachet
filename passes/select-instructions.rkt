@@ -30,7 +30,7 @@
 	(negq ,v^)))]
 
    [`(assign ,v (+ ,e1 ,e2))
-    (let ([v^ (select-instructions^ v rs)]
+    (let ([v^  (select-instructions^ v rs)]
 	  [e1^ (select-instructions^ e1 rs)]
 	  [e2^ (select-instructions^ e2 rs)])
       `((movq ,e2^ ,v^)
@@ -44,7 +44,7 @@
 
    [`(assign ,v (not ,es))
     `((movq ,(select-instructions^ es rs)
-	    ,(select-instructions^ v rs))
+	    ,(select-instructions^ v  rs))
       (xorq (int 1) ,(select-instructions^ v rs)))]
 
    [`(assign ,v (allocate ,len (Vector ,ts ...)))
@@ -77,43 +77,29 @@
    [`(return ,v)
     `((movq ,(select-instructions^ v rs) (reg rax)))]
 
+   ;; Checks if there is enough space in the from space
    [`(if (collection-needed? ,bytes) ,thn ,els)
-    `((movq (global-value free_ptr) (var end-data.1))
-      (addq (int ,bytes) (var end-data.1))
-      (cmpq (var end-data.1) (global-value fromspace_end))
-      (setl (byte-reg al))
-      (movzbq (byte-reg al) (var lt.1))
-      (if (eq? (int 0) (var lt.1))
-	  ,(select-instructions^ els rs)
-	  ,(select-instructions^ thn rs)))]
+    (let ([end-data (gensym "end-data.")]
+	  [lt      (gensym "lt.")])
+      `((movq (global-value free_ptr) (var ,end-data))
+	(addq (int ,bytes) (var ,end-data))
+	(cmpq (var ,end-data) (global-value fromspace_end))
+	(setl (byte-reg al))
+	(movzbq (byte-reg al) (var ,lt))
+	(if (eq? (int 0) (var ,lt))
+	    ,(select-instructions^ els rs)
+	    ,(select-instructions^ thn rs))))]
 
    [`(call-live-roots ,vs (collect ,bytes))
     (append
-     (car (foldr (lambda (v acc)
-		   (cons (append
-			  `((movq (var ,v)
-				  (offset (var ,rs)
-					  ,(* 8 (- 1 (cdr acc))))))
-			  (car acc))
-			 (+ 1 (cdr acc))))
-		 '(() . 0)
-		 vs))
-     `((movq ,rs ROOTSTACK.new)
-       (addq (int ,(length vs)) ROOTSTACK.new)
-       (movq (var ROOTSTACK.new) (reg rdi))
-       (movq (int ,bytes) (reg rsi))
-       (callq collect))
-     (car (foldr (lambda (v acc)
-		   (cons (append
-			  `((movq
-			     (offset (var ,rs)
-				     ,(* 8 (- 1 (cdr acc))))
-			     (var ,v)
-			     ))
-			  (car acc))
-			 (+ 1 (cdr acc))))
-		 '(() . 0)
-		 vs)))]
+     (push-live-roots vs rs)
+     (let ([newrs (gensym "rootstack.")])
+       `((movq ,rs (var ,newrs))
+	 (addq (int ,(length vs)) (var ,newrs))
+	 (movq (var ,newrs) (reg rdi))
+	 (movq (int ,bytes) (reg rsi))
+	 (callq collect)))
+     (pop-live-roots vs rs))]
 
    [`(initialize ,rootlen ,heaplen)
     `((movq (int ,rootlen) (reg rdi))
@@ -121,16 +107,64 @@
       (callq initialize)
       (movq (global-value rootstack_begin) (var ,rs)))]
 
-   ;; What case does this cover?
+   ;; For recuring on body of the list
    [`(,x ...) (select-instructions^ (car x) rs)]
+
    ))
 
 (define select-instructions
   (lambda (e)
     (match e
      [`(program ,vs (type ,t) ,es ...)
-      `(program ,vs ,@(select-instructions es))]
+      (let ([instr^ (select-instructions es)])
+	`(program ,(remove-duplicates
+		    (append vs (get-vars instr^ '())))
+		  ,@instr^))]
      ['() '()]
-     [else (append (select-instructions^ (car e) 'rootstack_begin)
-		   (select-instructions (cdr e)))]
+     [else (let ([rs (gensym "rootstack.")])
+	     (append (select-instructions^ (car e) rs)
+		     (select-instructions (cdr e))))]
      )))
+
+(define (push-live-roots vars rootstack)
+  (car
+   (foldr (lambda (v acc)
+	    (cons (append
+		   `((movq (var ,v)
+			   (offset (var ,rootstack) ,(* 8 (- 1 (cdr acc))))))
+		   (car acc))
+		  (+ 1 (cdr acc))))
+	  '(() . 0)
+	  vars)))
+
+(define (pop-live-roots vars rootstack)
+  (car
+   (foldr (lambda (v acc)
+	    (cons (append
+		   `((movq
+		      (offset (var ,rootstack) ,(* 8 (- 1 (cdr acc))))
+		      (var ,v)
+		      ))
+		   (car acc))
+		  (+ 1 (cdr acc))))
+	  '(() . 0)
+	  vars)))
+
+;; We run these after select-instructions is complete to add our
+;; new gensym vars to the front of our prog
+(define get-vars-helper
+  (lambda (instr)
+    (match instr
+     [`(,op ,_ (var ,e2)) (list e2)]
+     [`(if ,cnd ,thn ,els) (append (get-vars cnd '())
+			           (get-vars thn '())
+                                   (get-vars els '()))]
+     [else '()])))
+
+(define get-vars
+  (lambda (instrs ans)
+    (if (null? instrs)
+        ans
+        (get-vars (cdr instrs)
+		  (append ans
+			  (get-vars-helper (car instrs)))))))
