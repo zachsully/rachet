@@ -12,10 +12,10 @@
 
 (define (assign-homes e)
   (match e
-   [`(program (,vars ,reg-map) ,instrs ...)
+   [`(program (,vars ,reg-map) ,t ,instrs ...)
     (begin
       (color->reg reg-map)
-      `(program (,vars ,reg-map) ,@(assign-reg instrs reg-map '())))]))
+      `(program (,vars ,reg-map) ,t ,@(assign-reg instrs reg-map '())))]))
 
 
 (define (assign-reg instrs reg-map ans)

@@ -12,7 +12,7 @@
 
 (define (print-x86 e)
   (match e
-   [`(program (,v ,x) ,es ...)
+   [`(program (,v ,x) ,t ,es ...)
     (let ([size (number->string (* 8 (length v)))])
       (let ([head (string-append "\t.globl main\nmain:\n")]
             [init

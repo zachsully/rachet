@@ -6,10 +6,10 @@
 (define lower-conditionals
   (lambda (e)
     (match e
-     [`(program ,v ,es ...)
-      `(program ,v ,@(foldr (lambda (e^ acc) (append (get-low e^) acc))
-                            '()
-                            es))])))
+     [`(program ,v ,t ,es ...)
+      `(program ,v ,t ,@(foldr (lambda (e^ acc) (append (get-low e^) acc))
+			       '()
+			       es))])))
 
 (define (get-low e)
   (match e

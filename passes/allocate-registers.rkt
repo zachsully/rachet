@@ -12,15 +12,16 @@
 ;;
 
 ;; caller-save registers with rax
-(define caller-save^ (set 'rax 'rdx 'rcx 'rsi 'rdi 'r8 'r9 'r10 'r11 ))
+(define caller-save^ (set 'rax 'rdx 'rcx 'rsi 'rdi 'r8 'r9 'r10 'r11))
 
 (define (allocate-registers e)
   (match e
-    [`(program (,vs ,inter-graph) ,instrs ...)
+    [`(program (,vs ,inter-graph) ,t ,instrs ...)
      (let ([sat-graph (make-sat-graph vs)]
            [c-graph (make-color-graph vs)])
        `(program (,vs
                   ,(color-graph vs inter-graph sat-graph c-graph))
+		 ,t
                  ,@instrs))]))
 
 ;; Initialize the color-graph

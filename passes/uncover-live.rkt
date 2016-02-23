@@ -12,8 +12,10 @@
 
 (define (uncover-live e)
   (match e
-   [`(program (,vs ...) ,instrs ...)
-    `(program (,vs ,(recieves (reverse instrs) (set ) (set ) '())) ,@instrs)]))
+   [`(program (,vs ...) ,t ,instrs ...)
+    `(program (,vs ,(recieves (reverse instrs) (set ) (set ) '()))
+	      ,t
+	      ,@instrs)]))
 
 ;; a variable is live from when it was assigned to when it was used
 ;; The accummulator is structured like this
@@ -41,7 +43,7 @@
   (member op read-write-list)))
 
 (define unary-list
-  '(negq sete))
+  '(negq sete setl))
 
 (define unary?
   (lambda (op)
@@ -55,7 +57,6 @@
     (member op conflict-all-list)))
 
 
-
 (define binary-live
   (lambda (src)
     (match src
@@ -65,8 +66,6 @@
            [else (set )])))
 
 ;; live-before = (union (set-subract live-after  writes) reads)
-
-
 (define recieves
   (lambda (instrs live-after live-before uncover)
     (if (null? instrs)
@@ -74,7 +73,8 @@
       (let-values ([(instr before-set after-set)
                     (recieves-helper (car instrs) live-before)])
                   (recieves (cdr instrs) after-set before-set
-                            (append `((,instr ,before-set ,after-set)) uncover))))))
+                            (append `((,instr ,before-set ,after-set))
+				    uncover))))))
 
 
 
@@ -118,13 +118,20 @@
 
      [`(if (eq? (int 1) ,cnd) ,thn ,els)
       (let ([thn^ (recieves thn (set ) after-set '())]
-            [els^ (recieves thn (set ) after-set '())])
+            [els^ (recieves els (set ) after-set '())])
         (values `(if (eq? (int 1) ,cnd)
                      ,thn^
                      ,els^)
                 (set-union (cadar thn^) (cadar els^) (binary-live cnd))
                 (set-union (caddar thn^) (caddar els^) after-set)))]
 
+     [`(if (eq? (int 0) ,cnd) ,thn ,els)
+      (let ([els^ (recieves els (set ) after-set '())])
+        (values `(if (eq? (int 0) ,cnd)
+                     ()
+		     ,els^)
+                (set-union (set ) (cadar els^) (binary-live cnd))
+                (set-union (set ) (caddar els^) after-set)))]
      )))
 
 

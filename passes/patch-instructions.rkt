@@ -13,10 +13,10 @@
 (define patch-instructions
   (lambda (e)
     (match e
-     [`(program ,v ,es ...)
-      `(program ,v ,@(foldr (lambda (e^ acc) (append (patch e^) acc))
-                            '()
-                            es))])))
+     [`(program ,v ,t ,es ...)
+      `(program ,v ,t ,@(foldr (lambda (e^ acc) (append (patch e^) acc))
+			       '()
+			       es))])))
 
 (define (patch e)
   (match e
