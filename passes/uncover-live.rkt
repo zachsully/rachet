@@ -56,7 +56,6 @@
   (lambda (op)
     (member op conflict-all-list)))
 
-
 (define binary-live
   (lambda (src)
     (match src
@@ -133,55 +132,3 @@
                 (set-union (set ) (cadar els^) (binary-live cnd))
                 (set-union (set ) (caddar els^) after-set)))]
      )))
-
-
-
-
-;; #|
-;; (uncover-live '(program
-;;   (if7773 if7773)
-;;   (if (eq? (int 1) (int 1))
-;;     ((movq (int 42) (var if7773)))
-;;     ((movq (int 0) (var if7773))))
-;;   (movq (var if7773) (reg rax)))
-;; )
-;; |#
-;; ;; ((lambda (p)
-;; ;;    (uncover-live p))
-;; ;;  `(program (y)
-;; ;;     (movq (int 1) (var y))
-;; ;;     (subq (var y) (reg rax))))
-
-;; (pretty-print
-;;  ((lambda (p)
-;;     (uncover-live p))
-
-
-;; '(program (things)
-;;           (callq read_int)
-;;           (movq (reg rax) (var t.1))
-;;           (cmpq (int 1) (var t.1))
-;;           (sete (byte-reg al))
-;;           (movzbq (byte-reg al) (var t.2))
-;;           (if (eq? (int 1) (var t.2))
-;;             ((movq (int 42) (var if.1)))
-;;             ((movq (int 0) (var if.1))))
-;;           (movq (var if.1) (reg rax)))
-
-;; ;;'(program (() (()) (movq (int 42) (reg rax))))
-
-;; #|
-
-;;   `(program (v w x y z)
-;;      (movq (int 1) (var v))       ;; v
-;;      (movq (int 46) (var w))      ;; v,w
-;;      (movq (var v) (var x))       ;; w,x
-;;      (addq (int 7) (var x))       ;; w,x
-;;      (movq (var x) (var y))       ;; w,x,y
-;;      (addq (int 4) (var y))       ;; w,x,y
-;;      (movq (var x) (var z))       ;; w,y,z
-;;      (addq (var w) (var z))       ;; y,z
-;;      (movq (var z) (reg rax))     ;; y,rax
-;;      (subq (var y) (reg rax)))
-;; |#
-;;   ))   ;;
