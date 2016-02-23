@@ -86,8 +86,7 @@
                      (values `(not ,es_ex) es_stmts)))]
 
    [`(vector ,args ...)
-    (if need-var
-        (let ([args^
+    (let ([args^
                (foldr (lambda (x acc)
                     (let-values ([(ex st)
                                   (flatten^ x need-var)])
@@ -98,17 +97,7 @@
                   args)]
               [tmp (gensym "vec.")])
           (values tmp (append (cadr args^)
-                              `((assign ,tmp (vector ,@(car args^)))))))
-        (let ([args^
-               (foldr (lambda (x acc)
-                        (let-values ([(ex st)
-                                      (flatten^ x need-var)])
-                          (cons
-                           (cons ex (car acc))
-                           (cons st (cadr acc)))))
-                      (list '() '())
-                      args)])
-          (values `(vector ,@(car args^)) (cadr args^))))]
+                              `((assign ,tmp (vector ,@(car args^)))))))]
 
    [`(vector-ref ,arg ,i)
     (if need-var
@@ -123,7 +112,7 @@
         (let ([tmp (gensym "vset.")])
           (let-values ([(exA stmtsA) (flatten^ arg need-var)]
                        [(exN stmtsN) (flatten^ narg need-var)])
-            (values tmp (append `((assign ,tmp `(vector-set! ,exA ,i ,exN)))
+            (values tmp (append `((assign ,tmp (vector-set! ,exA ,i ,exN)))
                                 stmtsA
                                 stmtsN)))
 )

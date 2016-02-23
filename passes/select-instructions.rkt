@@ -57,14 +57,16 @@
 	(addq (int ,(* 8 (+ 1 len))) (global-value free_ptr))
 	(movq (int ,tag) (offset ,v^ 0))))]
 
+   ;; there is a special case here for if 'vec' is a vector-ref
    [`(assign ,v (vector-set! ,vec ,n ,arg))
     `((movq ,(select-instructions^ arg rs)
-	    (offset ,(select-instructions^ vec rs) ,(* 8 (+ 1 n)))))]
+	    (offset ,(select-instructions^ vec rs)
+		    ,(* 8 (+ 1 n)))))]
 
    [`(assign ,v (vector-ref ,vec ,n))
     `((movq (offset ,(select-instructions^ vec rs)
 		    ,(* 8 (+ 1 n)))
-	    ,v))]
+	    (var ,v)))]
 
    [`(if (eq? ,bool ,cnd) ,thn ,els)
     `((if (eq? ,(select-instructions^ bool rs)
