@@ -87,30 +87,35 @@
 
    [`(vector ,args ...)
     (let ([args^
-               (foldr (lambda (x acc)
-                    (let-values ([(ex st)
-                                  (flatten^ x need-var)])
+               (foldl (lambda (x acc)
+                    (let-values ([(ex st) (flatten^ x need-var)])
                         (cons
-                         (cons ex (car acc))
-                         (cons st (cadr acc)))))
-                  (list '() '())
+                         (append (car acc) `(,ex))
+                         (append st (cdr acc)))))
+		      (cons '() '())
                   args)]
-              [tmp (gensym "vec.")])
-          (values tmp (append (cadr args^)
-                              `((assign ,tmp (vector ,@(car args^)))))))]
+	  [tmp (gensym "vec.")])
+      (values tmp (append (cdr args^)
+			  `((assign ,tmp (vector ,@(car args^)))))))]
+
 
    [`(vector-ref ,arg ,i)
-    (if need-var
-        (let ([tmp (gensym "vref.")])
-          (let-values ([(ex stmts) (flatten^ arg need-var)])
-            (values tmp (append stmts `((assign ,tmp (vector-ref ,ex ,i)))))))
-        (let-values ([(ex stmts) (flatten^ arg need-var)])
-          (values `(vector-ref ,ex ,i) stmts)))]
+    (let ([tmp (gensym "vref.")])
+      (let-values ([(ex stmts) (flatten^ arg need-var)])
+	(values tmp (append stmts `((assign ,tmp (vector-ref ,ex ,i)))))))]
+
+   ;; [`(vector-ref ,arg ,i)
+   ;;  (if need-arg
+   ;;      (let ([tmp (gensym "vref.")])
+   ;;        (let-values ([(ex stmts) (flatten^ arg need-var)])
+   ;;          (values tmp (append stmts `((assign ,tmp (vector-ref ,ex ,i)))))))
+   ;;      (let-values ([(ex stmts) (flatten^ arg need-var)])
+   ;;        (values `(vector-ref ,ex ,i) stmts)))]
 
    [`(vector-set! ,arg ,i ,narg)
     (if need-var
         (let ([tmp (gensym "vset.")])
-          (let-values ([(exA stmtsA) (flatten^ arg need-var)]
+          (let-values ([(exA stmtsA) (flatten^ arg #t)]
                        [(exN stmtsN) (flatten^ narg need-var)])
             (values tmp (append `((assign ,tmp (vector-set! ,exA ,i ,exN)))
                                 stmtsA

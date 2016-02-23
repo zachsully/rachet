@@ -1,6 +1,7 @@
 #lang racket
 (require "../utilities.rkt")
 (require "../uncover-types.rkt")
+(require "../runtime-config.rkt")
 (provide expose-allocation)
 
 ;;
@@ -70,4 +71,4 @@
                   stmts)])
       `(program ,(append vars voids)
                 ,t
-                ,@(cons `(initialize 10000 10000) stmts)))]))
+                ,@(cons `(initialize ,(rootstack-size) ,(heap-size)) stmts)))]))
