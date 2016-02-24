@@ -136,10 +136,10 @@
    (foldr (lambda (v acc)
 	    (cons (append
 		   `((movq (var ,v)
-			   (offset (var ,rootstack) ,(* 8 (- 1 (cdr acc))))))
+			   (offset (var ,rootstack) ,(* 8 (- (cdr acc) 1)))))
 		   (car acc))
 		  (+ 1 (cdr acc))))
-	  '(() . 0)
+	  '(() . 1)
 	  vars)))
 
 (define (pop-live-roots vars rootstack)
@@ -147,12 +147,12 @@
    (foldr (lambda (v acc)
 	    (cons (append
 		   `((movq
-		      (offset (var ,rootstack) ,(* 8 (- 1 (cdr acc))))
+		      (offset (var ,rootstack) ,(* 8 (- (cdr acc) 1)))
 		      (var ,v)
 		      ))
 		   (car acc))
 		  (+ 1 (cdr acc))))
-	  '(() . 0)
+	  '(() . 1)
 	  vars)))
 
 ;; We run these after select-instructions is complete to add our

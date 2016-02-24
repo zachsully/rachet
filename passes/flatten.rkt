@@ -104,22 +104,14 @@
       (let-values ([(ex stmts) (flatten^ arg need-var)])
 	(values tmp (append stmts `((assign ,tmp (vector-ref ,ex ,i)))))))]
 
-   ;; [`(vector-ref ,arg ,i)
-   ;;  (if need-arg
-   ;;      (let ([tmp (gensym "vref.")])
-   ;;        (let-values ([(ex stmts) (flatten^ arg need-var)])
-   ;;          (values tmp (append stmts `((assign ,tmp (vector-ref ,ex ,i)))))))
-   ;;      (let-values ([(ex stmts) (flatten^ arg need-var)])
-   ;;        (values `(vector-ref ,ex ,i) stmts)))]
-
    [`(vector-set! ,arg ,i ,narg)
     (if need-var
         (let ([tmp (gensym "vset.")])
           (let-values ([(exA stmtsA) (flatten^ arg #t)]
                        [(exN stmtsN) (flatten^ narg need-var)])
-            (values tmp (append `((assign ,tmp (vector-set! ,exA ,i ,exN)))
-                                stmtsA
-                                stmtsN)))
+            (values tmp (append stmtsA
+				stmtsN
+				`((assign ,tmp (vector-set! ,exA ,i ,exN))))))
 )
         (let-values ([(exA stmtsA) (flatten^ arg need-var)]
                      [(exN stmtsN) (flatten^ narg need-var)])
