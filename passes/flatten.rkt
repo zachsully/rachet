@@ -22,6 +22,18 @@
 
    [(? boolean?) (values e '())]
 
+   [`(eq? ,e1 ,e2)
+    (if need-var
+        (let ([tmp (gensym "eq.")])
+          (let-values ([(e1_ex e1_stmts) (flatten^ e1 need-var)]
+                       [(e2_ex e2_stmts) (flatten^ e2 need-var)])
+            (values tmp (append e1_stmts
+                                e2_stmts
+                                `((assign ,tmp (eq? ,e1_ex ,e2_ex)))))))
+        (let-values ([(e1_ex e1_stmts) (flatten^ e1 need-var)]
+                     [(e2_ex e2_stmts) (flatten^ e2 need-var)])
+          (values `(eq? ,e1_ex ,e2_ex) (append e1_stmts e2_stmts))))]
+
    [`(let ([,x ,rhs]) ,body)
     (let-values ([(rhs_ex rhs_stmts) (flatten^ rhs #f)]
                  [(body_ex body_stmts) (flatten^ body need-var)])
@@ -50,9 +62,9 @@
           (values `(+ ,ex1 ,ex2) (append stmts1 stmts2))))]
 
    [`(if ,cnd ,thn ,els)
-    (let-values ([(cnd_ex cnd_stmts) (flatten^ cnd need-var)]
-                 [(thn_ex thn_stmts) (flatten^ thn need-var)]
-                 [(els_ex els_stmts) (flatten^ els need-var)])
+    (let-values ([(cnd_ex cnd_stmts) (flatten^ cnd #t)]
+                 [(thn_ex thn_stmts) (flatten^ thn #t)]
+                 [(els_ex els_stmts) (flatten^ els #t)])
       (let ([tmp (gensym "if.")])
         (values tmp
                 (append cnd_stmts
@@ -64,18 +76,6 @@
    [`(or ,e1 ,e2) (flatten^ `(if ,e1 #t e2) need-var)]
 
    [`(and ,e1 ,e2) (flatten^ `(if ,e1 ,e2 #f) need-var)]
-
-   [`(eq? ,e1 ,e2)
-    (if need-var
-        (let ([tmp (gensym "eq.")])
-          (let-values ([(e1_ex e1_stmts) (flatten^ e1 need-var)]
-                       [(e2_ex e2_stmts) (flatten^ e2 need-var)])
-            (values tmp (append e1_stmts
-                                e2_stmts
-                                `((assign ,tmp (eq? ,e1_ex ,e2_ex)))))))
-        (let-values ([(e1_ex e1_stmts) (flatten^ e1 need-var)]
-                     [(e2_ex e2_stmts) (flatten^ e2 need-var)])
-          (values `(eq? ,e1_ex ,e2_ex) (append e1_stmts e2_stmts))))]
 
    [`(not ,es) (if need-var
                    (let ([tmp (gensym "not.")])

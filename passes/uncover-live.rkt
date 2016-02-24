@@ -116,15 +116,20 @@
               after-set)]
 
      [`(if (eq? (int 1) ,cnd) ,thn ,els)
-      (let ([thn^ (recieves thn (set ) after-set '())]
-            [els^ (recieves els (set ) after-set '())])
-        (values instr
+      (let ([thn^ (recieves (reverse thn) (set ) after-set '())]
+            [els^ (recieves (reverse els) (set ) after-set '())])
+        (values `(if (eq? (int 1) ,cnd)
+		     ,thn^
+		     ,els^)
                 (set-union (cadar thn^) (cadar els^) (binary-live cnd))
                 (set-union (caddar thn^) (caddar els^) after-set)))]
 
      [`(if (eq? (int 0) ,cnd) ,thn ,els)
-      (let ([els^ (recieves els (set ) after-set '())])
-        (values instr
+      (let ([thn^ (recieves (reverse thn) (set ) after-set '())]
+	    [els^ (recieves (reverse els) (set ) after-set '())])
+        (values `(if (eq? (int 0) ,cnd)
+		     ,thn^
+		     ,els^)
                 (set-union (set ) (cadar els^) (binary-live cnd))
                 (set-union (set ) (caddar els^) after-set)))]
      )))
