@@ -26,6 +26,23 @@
 		      (lambda (live-after)
 			(add-edge graph dst live-after)))]
 
+
+	  [`(movq (offset (,_ ,src-root) ,i) (,_ ,dst))
+	   (set-map (set-subtract after-set (set src-root dst))
+                    (lambda (live-after)
+                      (add-edge graph dst live-after)))]
+
+	  [`(movq (,_ ,src) (offset (,_ ,dst-root) ,i))
+	   (set-map (set-subtract after-set (set src dst-root))
+                    (lambda (live-after)
+                      (add-edge graph dst-root live-after)))]
+
+	  [`(movq (offset (,_ ,src-root) ,i) (offset (,_ ,dst-root) ,i))
+	   (set-map (set-subtract after-set (set src-root dst-root))
+                    (lambda (live-after)
+                      (add-edge graph dst-root live-after)))]
+
+
           [`(,op (,_ ,src) (,_ ,dst)) #:when (member op '(addq subq xorq))
            (set-map (set-subtract after-set (set dst))
                     (lambda (live-after)
@@ -56,19 +73,3 @@
                                (lambda (call-save)
                                  (add-edge graph call-save live-after)))))]
           )))))
-
-
-	  ;; [`(movq (offset (,_ ,src-root) ,i) (,_ ,dst))
-	  ;;  (set-map (set-subtract after-set (set src-root dst))
-          ;;           (lambda (live-after)
-          ;;             (add-edge graph dst live-after)))]
-
-	  ;; [`(movq (,_ ,src) (offset (,_ ,dst-root) ,i))
-	  ;;  (set-map (set-subtract after-set (set src dst-root))
-          ;;           (lambda (live-after)
-          ;;             (add-edge graph dst-root live-after)))]
-
-	  ;; [`(movq (offset (,_ ,src-root) ,i) (offset (,_ ,dst-root) ,i))
-	  ;;  (set-map (set-subtract after-set (set src-root dst-root))
-          ;;           (lambda (live-after)
-          ;;             (add-edge graph dst-root live-after)))]

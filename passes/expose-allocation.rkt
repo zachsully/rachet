@@ -22,6 +22,8 @@
 ;;   ..
 ;;  (vector-set! <lhs> (len -1) <e>)
 ;;
+;; > a special case: that removes the assignment statment for if's that return
+;; void
 
 (define (expose-allocation p)
   (match p
@@ -43,9 +45,16 @@
                                  acc))]
 
                       [`,_ (append `(,stmt) acc)])) '() stmts)])
-      (void-vec-sets `(program ,(uncover-types p)
-                               ,t
-                               ,@stmts^)))]))
+      (void-vec-sets
+	`(program ,(uncover-types p)
+		  ,t
+		  ,@stmts^))
+      )]))
+;; (remove-void-ifs
+;;        (void-vec-sets
+;; 	`(program ,(uncover-types p)
+;; 		  ,t
+;; 		  ,@stmts^)))
 
 (define (vector-setting var es)
  ((lambda (f)
@@ -56,6 +65,7 @@
                     `((assign ,tmp (vector-set! ,var ,(cdr acc) ,e))))
           (+ 1 (cdr acc)))))))
 
+;; THIS IS A BANDAID
 ;; take program and turns vector-sets! into assign... as well as adds them to
 ;; the variables
 (define (void-vec-sets p)
@@ -72,3 +82,23 @@
       `(program ,(append vars voids)
                 ,t
                 ,@(cons `(initialize ,(rootstack-size) ,(heap-size)) stmts)))]))
+
+
+
+;; THIS IS A BANDAID
+;; removes the assignment statement at the end of a side-effecting if
+;; see test 3_15
+(define (remove-void-ifs p)
+  (match p
+   [`(program ,vars ,t ,instr ...)
+    (let ([void-ifs
+	   (map car (filter (lambda (vs) (equal? 'Void (cdr vs))) vars))])
+      (if (empty? void-ifs)
+	  p
+	  `(program ,vars
+		    ,t
+		    ,@(filter (lambda (i)
+				(match i
+				 [`(assign ,var ,_)
+				  (not (member var void-ifs))]
+				 [else #t])) instr))))]))
