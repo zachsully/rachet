@@ -28,6 +28,7 @@
 
 (define (assign-helper instr reg-map)
   (match instr
+   ;; [`(,op (,_ ,_) (offset (,typey ,y) ,i))]
    [`(,op (,typex ,x) (,typey ,y))
     (let ([x^ (hash-ref reg-map x #f)]
           [y^ (hash-ref reg-map y #f)])
@@ -39,6 +40,7 @@
        [else `((,op ,x^ ,y^))]))]
    [`(negq (var ,x)) `((negq ,(hash-ref reg-map x)))]
    [`(sete ,x) `((sete ,x))]
+   [`(setl ,x) `((setl ,x))]
    [`(if (eq? ,t ,cnd) ,thn ,els)
     (let ([cnd^ (if (eq? (car cnd) 'var) (hash-ref reg-map (cadr cnd)) cnd)]
           [thn^ (assign-reg thn reg-map '())]
