@@ -121,11 +121,11 @@
 
 (define (flatten p)
   (match p
-   [`(program ,expr)
+   [`(program ,t ,expr)
     (let-values ([(ex rhs) (flatten^ expr #t)])
       (let ([vars (remove-duplicates (unique-vars rhs '()))])
         `(program ,vars
-                  (type ,(typecheck p))
+                  ,t
                   ,@(append rhs `((return ,ex))))))]))
 
 (define unique-vars-helper

@@ -43,10 +43,12 @@
 
 (define (print-x86^ e)
   (match e
+   [`(offset ,loc ,i)
+    (string-append (number->string i) "(" (print-x86^ loc) ")")]
    [`(,op ,a ,b) #:when (member op '(movq addq cmpq movzbq xorq))
     (string-append
      "\t" (symbol->string op) "\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
-   [`(,op ,q) #:when (member op '(negq sete))
+   [`(,op ,q) #:when (member op '(negq sete setl))
     (string-append "\t" (symbol->string op) "\t" (print-x86^ q) "\n")]
    [`(callq ,func)
     (string-append "\tcallq\t" (symbol->string func) "\n")]

@@ -129,4 +129,4 @@
 
 (define (typecheck e)
   (match e
-   [`(program ,e) (typecheck^ '() e)]))
+   [`(program ,e) `(program (type ,(typecheck^ '() e)) ,e)]))
