@@ -28,7 +28,37 @@
 
 (define (assign-helper instr reg-map)
   (match instr
-   ;; [`(,op (,_ ,_) (offset (,typey ,y) ,i))]
+   [`(,op (,typex ,x) (offset (,typey ,y) ,i))
+    (let ([x^ (hash-ref reg-map x #f)]
+          [y^ (hash-ref reg-map y #f)])
+      (cond
+       [(and (equal? x^ #f) (equal? y^ #f))
+        `((,op (,typex ,x)) (offset (,typey ,y) ,i))]
+       [(equal? x^ #f)
+	`((,op (,typex ,x) (offset ,y^ ,i)))]
+       [(equal? y^ #f) `((,op ,x^ (,typey ,y)))]
+       [else `((,op ,x^ (offset ,y^ ,i)))]))]
+
+   [`(,op (offset (,typex ,x) ,i) (,typey ,y))
+    (let ([x^ (hash-ref reg-map x #f)]
+          [y^ (hash-ref reg-map y #f)])
+      (cond
+       [(and (equal? x^ #f) (equal? y^ #f))
+        `((,op (offset (,typex ,x) i) (,typey ,y)))]
+       [(equal? x^ #f) `((,op (offset (,typex ,x), i) ,y^))]
+       [(equal? y^ #f) `((,op (offset ,x^ ,i) (,typey ,y)))]
+       [else `((,op (offset ,x^ ,i) ,y^))]))]
+
+   [`(,op (offset (,typex ,x) ,i) (offset (,typey ,y) ,j))
+    (let ([x^ (hash-ref reg-map x #f)]
+          [y^ (hash-ref reg-map y #f)])
+      (cond
+       [(and (equal? x^ #f) (equal? y^ #f))
+        `((,op (offset (,typex ,x) i) (offset (,typey ,y) ,i)))]
+       [(equal? x^ #f) `((,op (offset (,typex ,x), i) (offset ,y^ ,i) ))]
+       [(equal? y^ #f) `((,op (offset ,x^ ,i) (offset (,typey ,y) ,i)))]
+       [else `((,op (offset ,x^ ,i) (offset ,y^ ,i)))]))]
+
    [`(,op (,typex ,x) (,typey ,y))
     (let ([x^ (hash-ref reg-map x #f)]
           [y^ (hash-ref reg-map y #f)])
@@ -38,14 +68,19 @@
        [(equal? x^ #f) `((,op (,typex ,x) ,y^))]
        [(equal? y^ #f) `((,op ,x^ (,typey ,y)))]
        [else `((,op ,x^ ,y^))]))]
+
    [`(negq (var ,x)) `((negq ,(hash-ref reg-map x)))]
+
    [`(sete ,x) `((sete ,x))]
+
    [`(setl ,x) `((setl ,x))]
+
    [`(if (eq? ,t ,cnd) ,thn ,els)
     (let ([cnd^ (if (eq? (car cnd) 'var) (hash-ref reg-map (cadr cnd)) cnd)]
           [thn^ (assign-reg thn reg-map '())]
           [els^ (assign-reg els reg-map '())])
       `((if (eq? ,t ,cnd^) ,thn^ ,els^)))]
+
    [`(callq ,x) `((callq ,x))]))
 
 

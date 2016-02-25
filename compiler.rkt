@@ -26,7 +26,7 @@
                     ("uncover-live",uncover-live,interp-x86)
                     ("build-interference",build-interference,interp-x86)
                     ("allocate-registers",allocate-registers,interp-x86)
-                    ;; ("assign homes",assign-homes,interp-x86)
+                    ("assign homes",assign-homes,interp-x86)
                     ;; ("lower-conditionals",lower-conditionals,interp-x86)
                     ;; ("patch instructions",patch-instructions,interp-x86)
                     ;; ("print-x86",print-x86, #f)
