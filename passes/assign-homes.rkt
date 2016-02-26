@@ -10,6 +10,8 @@
 ;; Pass takes a
 ;;
 
+(define num-registers 3)
+
 (define (assign-homes e)
   (match e
    [`(program (,vars ,reg-map) ,t ,instrs ...)
@@ -89,6 +91,6 @@
   (hash-map
    color-hash
    (lambda (x y)
-     (if (> y 3) ;; this is where we choose number of registers
-         (hash-set! color-hash x `(stack ,(- (* 8 (- y 3)))))
+     (if (> y num-registers) ;; this is where we choose number of registers
+         (hash-set! color-hash x `(stack ,(- (* 8 (- y num-registers)))))
          (hash-set! color-hash x `(reg ,(vector-ref general-registers y)))))))

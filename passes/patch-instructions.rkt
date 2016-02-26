@@ -23,15 +23,31 @@
    [`(,op (stack ,var1) (stack ,var2))
     `((movq (stack ,var1) (reg rax))
       (,op (reg rax) (stack ,var2)))]
+
    [`(,op ,var1 (int ,x))
     `((movq (int ,x) (reg rax))
       (,op ,var1 (reg rax)))]
-   [`(,op ,a (offset ,b 0))
-    `((,op ,a ,b))]
-   [`(,op (stack ,stack-loc-a) (offset (stack ,stack-loc-b) ,j))
-    `((pushq (stack ,stack-loc-a))
-      (movq (stack ,stack-loc-b) (reg rax))
-      (popq (offset (reg rax) ,j)))]
+
+   ;; [`(,op (offset (stack ,loc-a) ,i) (offset (stack ,loc-b) ,j))
+   ;;  `((movq (stack ,loc-a) (reg rax))
+   ;;    (,op ,a (offset (reg rax) ,i)))]
+
+   [`(,op ,a (offset (stack ,loc) ,i))
+    `((movq (stack ,loc) (reg rax))
+      (,op ,a (offset (reg rax) ,i)))]
+
+   [`(,op (offset (stack ,loc) ,i) ,b)
+    `((movq (stack ,loc) (reg rax))
+      (,op (offset (reg rax) ,i) ,b))]
+
+   [`(,op (global-value rootstack_begin) (stack ,i))
+    `((movq (global-value rootstack_begin) (reg rax))
+      (movq (reg rax) (stack ,i)))]
+
+   ;; [`(,op (stack ,a) (offset (stack ,stack-loc-b) ,j))
+   ;;  `((pushq (stack ,a))
+   ;;    (movq (stack ,stack-loc-b) (reg rax))
+   ;;    (popq (offset (reg rax) ,j)))]
    ;; [`(,op (offset (stack ,stack-loc-a) ,i) (offset (stack ,stack-loc-b) ,j))
    ;;  `((pushq ))]
    [else `(,e)]))

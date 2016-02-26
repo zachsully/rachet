@@ -63,4 +63,8 @@
    [`(,type ,r) #:when (member type '(reg byte-reg))
     (string-append "%" (symbol->string r))]
    [`(global-value ,v)
-    (string-append (symbol->string v) "(%rip)")]))
+    (string-append (symbol->string v) "(%rip)")]
+   [`(pushq ,v)
+    (string-append "\tpushq\t" (print-x86^ v))]
+   [`(popq ,v)
+    (string-append "\tpopq\t" (print-x86^ v))]))

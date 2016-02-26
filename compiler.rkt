@@ -39,12 +39,12 @@
 ;; (interp-tests "r1" typecheck r3-passes interp-scheme "r1" (range 1 20))
 ;; (interp-tests "r1a" typecheck r3-passes interp-scheme "r1a" (range 1 9))
 ;; (interp-tests "r2" typecheck r3-passes interp-scheme "r2" (range 1 24))
-;; (interp-tests "r3" typecheck r3-passes interp-scheme "r3" (range 1 16)) ;; skipping test 15 for now
+;; (interp-tests "r3" typecheck r3-passes interp-scheme "r3" `(4)) ;; skipping test 15 for now
 ;; (compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
 ;; (compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 24))
-;; (compiler-tests "r3-passes" typecheck r3-passes "r3" (range 1 16))
-;; (display "tests passed!") (newline)
+;; (compiler-tests "r3-passes" typecheck r3-passes "r3" `(4 5 6 7))
+(display "tests passed!") (newline)
 
 
 ;;;;;
@@ -58,14 +58,6 @@
 			   out)) p passes)))
 (define (compile-progs ps passes)
   (map (lambda (p) (compile-prog p passes)(newline)(newline)) ps))
-
-(define test1 `(program (vector-ref (vector-ref (vector (vector 42)) 0) 0)))
-(define test2 `(program (vector-ref (vector #t #f 0 42 9) 3)))
-(define test3 `(program 42))
-(define test4 `(program (if (eq? 42 42) (+ 2 40) 567)))
-(define test5 `(program (let ([x (vector #t)])
-                          (let ([y (vector #f)])
-                            (let ([z (vector 42)]) z)))))
 
 (compile-prog
  `(program (let ([v (vector (vector 42) 21)])
