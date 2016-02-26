@@ -26,4 +26,12 @@
    [`(,op ,var1 (int ,x))
     `((movq (int ,x) (reg rax))
       (,op ,var1 (reg rax)))]
+   [`(,op ,a (offset ,b 0))
+    `((,op ,a ,b))]
+   [`(,op (stack ,stack-loc-a) (offset (stack ,stack-loc-b) ,j))
+    `((pushq (stack ,stack-loc-a))
+      (movq (stack ,stack-loc-b) (reg rax))
+      (popq (offset (reg rax) ,j)))]
+   ;; [`(,op (offset (stack ,stack-loc-a) ,i) (offset (stack ,stack-loc-b) ,j))
+   ;;  `((pushq ))]
    [else `(,e)]))

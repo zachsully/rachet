@@ -12,7 +12,7 @@
 ;;
 
 ;; caller-save registers with rax
-(define caller-save^ (set 'rax 'rdx 'rcx 'rsi 'rdi 'r8 'r9 'r10 'r11))
+(define caller-save^ (set-union (set 'rax) caller-save))
 
 (define (allocate-registers e)
   (match e

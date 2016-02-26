@@ -43,8 +43,8 @@
 ;; (compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
 ;; (compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 24))
-(compiler-tests "r3-passes" typecheck r3-passes "r3" (range 1 16))
-(display "tests passed!") (newline)
+;; (compiler-tests "r3-passes" typecheck r3-passes "r3" (range 1 16))
+;; (display "tests passed!") (newline)
 
 
 ;;;;;
@@ -53,8 +53,8 @@
 (define (compile-prog p passes)
   (pretty-print (foldl (lambda (pass prog)
 			 (let ([out (pass prog)])
-			   (pretty-print out)
-			   (display "  =>") (newline)
+			   ;; (pretty-print out)
+			   ;; (display "  =>") (newline)
 			   out)) p passes)))
 (define (compile-progs ps passes)
   (map (lambda (p) (compile-prog p passes)(newline)(newline)) ps))
@@ -67,21 +67,22 @@
                           (let ([y (vector #f)])
                             (let ([z (vector 42)]) z)))))
 
-;; (compile-progs
-;;  `(
-;;    (program (let ([x (vector 1 2)]) 42))
-;;    )
-;;  `(
-;;    ,uniquify
-;;    ,flatten
-;;    ,expose-allocation
-;;    ,uncover-call-live-roots
-;;    ,select-instructions
-;;    ,uncover-live
-;;    ,build-interference
-;;    ;; ,allocate-registers
-;;    ;; ,assign-homes
-;;    ;; ,lower-conditionals
-;;    ;; ,patch-instructions
-;;    ;; ,print-x86
-;;    ))
+(compile-prog
+ `(program (let ([v (vector (vector 42) 21)])
+	     (vector-ref (vector-ref v 0) 0)))
+ `(,typecheck
+   ,uniquify
+   ,flatten
+   ,expose-allocation
+   ,uncover-call-live-roots
+   ,select-instructions
+   ,uncover-live
+   ,build-interference
+   ,allocate-registers
+   ,assign-homes
+   ,lower-conditionals
+   ,patch-instructions
+   ;; ,pretty-print
+   ,print-x86
+   ,display
+   ))

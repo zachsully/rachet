@@ -89,6 +89,6 @@
   (hash-map
    color-hash
    (lambda (x y)
-     (if (> y 12)
-         (hash-set! color-hash x `(stack ,(- (* 8 (- y 12)))))
+     (if (> y 3) ;; this is where we choose number of registers
+         (hash-set! color-hash x `(stack ,(- (* 8 (- y 3)))))
          (hash-set! color-hash x `(reg ,(vector-ref general-registers y)))))))
