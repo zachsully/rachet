@@ -28,10 +28,23 @@
     `((movq (int ,x) (reg rax))
       (,op ,var1 (reg rax)))]
 
-   ;; [`(,op (offset (stack ,loc-a) ,i) (offset (stack ,loc-b) ,j))
-   ;;  `((movq (stack ,loc-a) (reg rax))
-   ;;    (,op ,a (offset (reg rax) ,i)))]
 
+
+   ;; >>           Moving something from the stack to a vec                   <<
+   [`(,op (stack ,a) (offset ,b ,j))
+    `((pushq (stack ,a))
+      (movq ,b (reg rax))
+      (popq (offset (reg rax) ,j)))]
+
+   [`(,op (offset ,a ,i) (stack ,b))
+    `((pushq (stack ,b))
+      (movq ,a (reg rax))
+      (popq (offset (reg rax) ,i)))]
+   ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+   ;; >>                 When a vector is on the stack                        <<
    [`(,op ,a (offset (stack ,loc) ,i))
     `((movq (stack ,loc) (reg rax))
       (,op ,a (offset (reg rax) ,i)))]
@@ -39,15 +52,30 @@
    [`(,op (offset (stack ,loc) ,i) ,b)
     `((movq (stack ,loc) (reg rax))
       (,op (offset (reg rax) ,i) ,b))]
+   ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-   [`(,op (global-value rootstack_begin) (stack ,i))
-    `((movq (global-value rootstack_begin) (reg rax))
+
+
+
+   ;; >>                      Global-value to stack                           <<
+   [`(,op (global-value ,v) (stack ,i))
+    `((movq (global-value ,v) (reg rax))
       (movq (reg rax) (stack ,i)))]
+   ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-   ;; [`(,op (stack ,a) (offset (stack ,stack-loc-b) ,j))
-   ;;  `((pushq (stack ,a))
-   ;;    (movq (stack ,stack-loc-b) (reg rax))
-   ;;    (popq (offset (reg rax) ,j)))]
-   ;; [`(,op (offset (stack ,stack-loc-a) ,i) (offset (stack ,stack-loc-b) ,j))
-   ;;  `((pushq ))]
+
+
+   ;; >>                      cmpq  from stack                                <<
+   [`(cmpq (stack ,i) ,b)
+    `((movq (stack ,i) (reg rax))
+      (cmpq (reg rax) ,b))]
+   ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+   ;; >>                      movzbq to stack                                 <<
+   [`(movzbq ,al (stack ,i))
+    `((movq (stack ,i) (reg rax))
+      (movzbq ,al (reg rax))
+      (movq (reg rax) (stack ,i)))]
+   ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
    [else `(,e)]))

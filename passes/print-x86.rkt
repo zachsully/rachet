@@ -65,6 +65,6 @@
    [`(global-value ,v)
     (string-append (symbol->string v) "(%rip)")]
    [`(pushq ,v)
-    (string-append "\tpushq\t" (print-x86^ v))]
+    (string-append "\tpushq\t" (print-x86^ v) "\n")]
    [`(popq ,v)
-    (string-append "\tpopq\t" (print-x86^ v))]))
+    (string-append "\tpopq\t" (print-x86^ v) "\n")]))

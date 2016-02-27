@@ -40,10 +40,10 @@
 ;; (interp-tests "r1a" typecheck r3-passes interp-scheme "r1a" (range 1 9))
 ;; (interp-tests "r2" typecheck r3-passes interp-scheme "r2" (range 1 24))
 ;; (interp-tests "r3" typecheck r3-passes interp-scheme "r3" `(4)) ;; skipping test 15 for now
-;; (compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
-;; (compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
-;; (compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 24))
-;; (compiler-tests "r3-passes" typecheck r3-passes "r3" `(4 5 6 7))
+(compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
+(compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
+(compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 24))
+(compiler-tests "r3-passes" typecheck r3-passes "r3" (range 15 16))
 (display "tests passed!") (newline)
 
 
@@ -59,22 +59,22 @@
 (define (compile-progs ps passes)
   (map (lambda (p) (compile-prog p passes)(newline)(newline)) ps))
 
-(compile-prog
- `(program (let ([v (vector (vector 42) 21)])
-	     (vector-ref (vector-ref v 0) 0)))
- `(,typecheck
-   ,uniquify
-   ,flatten
-   ,expose-allocation
-   ,uncover-call-live-roots
-   ,select-instructions
-   ,uncover-live
-   ,build-interference
-   ,allocate-registers
-   ,assign-homes
-   ,lower-conditionals
-   ,patch-instructions
-   ;; ,pretty-print
-   ,print-x86
-   ,display
-   ))
+;; (compile-prog
+;;  `(program
+;; )
+;;  `(,typecheck
+;;    ,uniquify
+;;    ,flatten
+;;    ,expose-allocation
+;;    ,uncover-call-live-roots
+;;    ,select-instructions
+;;    ,uncover-live
+;;    ,build-interference
+;;    ,allocate-registers
+;;    ,assign-homes
+;;    ,lower-conditionals
+;;    ,patch-instructions
+;;    ;; ,pretty-print
+;;    ,print-x86
+;;    ,display
+;;    ))
