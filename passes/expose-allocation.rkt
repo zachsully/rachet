@@ -50,11 +50,6 @@
 		  ,t
 		  ,@stmts^))
       )]))
-;; (remove-void-ifs
-;;        (void-vec-sets
-;; 	`(program ,(uncover-types p)
-;; 		  ,t
-;; 		  ,@stmts^)))
 
 (define (vector-setting var es)
  ((lambda (f)
@@ -85,20 +80,20 @@
 
 
 
-;; THIS IS A BANDAID
-;; removes the assignment statement at the end of a side-effecting if
-;; see test 3_15
-(define (remove-void-ifs p)
-  (match p
-   [`(program ,vars ,t ,instr ...)
-    (let ([void-ifs
-	   (map car (filter (lambda (vs) (equal? 'Void (cdr vs))) vars))])
-      (if (empty? void-ifs)
-	  p
-	  `(program ,vars
-		    ,t
-		    ,@(filter (lambda (i)
-				(match i
-				 [`(assign ,var ,_)
-				  (not (member var void-ifs))]
-				 [else #t])) instr))))]))
+;; ;; THIS IS A BANDAID
+;; ;; removes the assignment statement at the end of a side-effecting if
+;; ;; see test 3_15
+;; (define (remove-void-ifs p)
+;;   (match p
+;;    [`(program ,vars ,t ,instr ...)
+;;     (let ([void-ifs
+;; 	   (map car (filter (lambda (vs) (equal? 'Void (cdr vs))) vars))])
+;;       (if (empty? void-ifs)
+;; 	  p
+;; 	  `(program ,vars
+;; 		    ,t
+;; 		    ,@(filter (lambda (i)
+;; 				(match i
+;; 				 [`(assign ,var ,_)
+;; 				  (not (member var void-ifs))]
+;; 				 [else #t])) instr))))]))

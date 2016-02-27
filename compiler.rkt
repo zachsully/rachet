@@ -39,11 +39,11 @@
 ;; (interp-tests "r1" typecheck r3-passes interp-scheme "r1" (range 1 20))
 ;; (interp-tests "r1a" typecheck r3-passes interp-scheme "r1a" (range 1 9))
 ;; (interp-tests "r2" typecheck r3-passes interp-scheme "r2" (range 1 24))
-;; (interp-tests "r3" typecheck r3-passes interp-scheme "r3" `(4)) ;; skipping test 15 for now
-(compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
-(compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
-(compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 24))
-(compiler-tests "r3-passes" typecheck r3-passes "r3" (range 15 16))
+;; (interp-tests "r3" typecheck r3-passes interp-scheme "r3" (range 7 15)) ;; skipping test 15 for now
+;; (compiler-tests "r1-passes" typecheck r3-passes "r1" (range 1 20))
+;; (compiler-tests "r1a-passes" typecheck r3-passes "r1a" (range 1 9))
+;; (compiler-tests "r2-passes" typecheck r3-passes "r2" (range 1 24))
+(compiler-tests "r3-passes" typecheck r3-passes "r3" (range 1 16))
 (display "tests passed!") (newline)
 
 

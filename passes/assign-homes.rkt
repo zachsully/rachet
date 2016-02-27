@@ -1,5 +1,6 @@
 #lang racket
 (require "../utilities.rkt")
+(require "../runtime-config.rkt")
 (provide assign-homes)
 
 ;;
@@ -9,8 +10,6 @@
 ;;
 ;; Pass takes a
 ;;
-
-(define num-registers 3)
 
 (define (assign-homes e)
   (match e
@@ -91,6 +90,6 @@
   (hash-map
    color-hash
    (lambda (x y)
-     (if (> y num-registers) ;; this is where we choose number of registers
-         (hash-set! color-hash x `(stack ,(- (* 8 (- y num-registers)))))
+     (if (> y (register-num)) ;; this is where we choose number of registers
+         (hash-set! color-hash x `(stack ,(- (* 8 (- y (register-num))))))
          (hash-set! color-hash x `(reg ,(vector-ref general-registers y)))))))

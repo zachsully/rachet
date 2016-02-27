@@ -3,6 +3,7 @@
 
 (provide
  (contract-out
+  [register-num   (parameter/c exact-nonnegative-integer?)]
   [rootstack-size (parameter/c exact-nonnegative-integer?)]
   [heap-size      (parameter/c exact-nonnegative-integer?)]))
 
@@ -20,3 +21,7 @@
 ;; Parameter that determines what the initial heap size of the program is.
 (define heap-size
   (make-parameter (expt 2 16)))
+
+;; Parameter that determines the number of registers to be used in the program
+(define register-num
+  (make-parameter 3))
