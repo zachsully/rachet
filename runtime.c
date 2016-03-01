@@ -276,8 +276,6 @@ void cheney(int64_t** rootstack_ptr)
   tospace_end = fromspace_end;
   fromspace_begin = flip_begin_tmp;
   fromspace_end = flip_end_tmp;
-  // and point the free_ptr to the new tospace
-  free_ptr = fromspace_begin;
 }
 
 

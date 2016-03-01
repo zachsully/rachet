@@ -62,6 +62,7 @@
            [`(var ,x) (set x)]
            [`(byte-reg ,x) (set 'rax)]
            [`(reg ,x) (set x)]
+	   [`(offset ,loc ,_) (binary-live loc)]
            [else (set )])))
 
 ;; live-before = (union (set-subract live-after  writes) reads)
@@ -80,6 +81,30 @@
 (define recieves-helper
   (lambda (instr after-set)
     (match instr
+     [`(,op (offset ,src ,i) (offset ,dst ,j))
+      #:when (addq movq subq)
+      (let ([src^ (binary-live src)]
+            [dst^ (binary-live dst)])
+        (values instr
+                (set-union after-set src^ dst^)
+                after-set))]
+
+     [`(,op (offset ,src ,i) ,dst)
+      #:when (addq movq subq)
+      (let ([src^ (binary-live src)]
+            [dst^ (binary-live dst)])
+        (values instr
+                (set-union after-set src^ dst^)
+                after-set))]
+
+     [`(,op ,src (offset ,dst ,j))
+      #:when (addq movq subq)
+      (let ([src^ (binary-live src)]
+            [dst^ (binary-live dst)])
+        (values instr
+                (set-union after-set src^ dst^)
+                after-set))]
+
      [`(,op ,src ,des) #:when (read2-write? op)
       (let ([src^ (binary-live src)]
             [des^ (binary-live des)])
