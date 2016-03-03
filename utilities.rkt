@@ -6,10 +6,10 @@
          fix while
          label-name lookup  make-dispatcher assert
          read-fixnum read-program
-         compile compile-file check-passes interp-tests compiler-tests
-         make-graph add-edge adjacent vertices print-dot
-         general-registers registers-for-alloc caller-save callee-save
-         arg-registers register->color registers align
+	 compile compile-file check-passes interp-tests compiler-tests
+	 make-graph add-edge adjacent vertices print-dot
+	 general-registers registers-for-alloc caller-save callee-save
+	 arg-registers register->color registers align
          byte-reg->full-reg print-by-type)
 
 ;; debug state is a nonnegative integer.

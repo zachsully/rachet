@@ -61,7 +61,8 @@
    [`(assign ,v (vector-set! ,vec ,n ,arg))
     `((movq ,(select-instructions^ arg rs)
 	    (offset ,(select-instructions^ vec rs)
-		    ,(* 8 (+ 1 n)))))]
+		    ,(* 8 (+ 1 n))))
+      (movq (int -1) (var ,v)))]
 
    [`(assign ,v (vector-ref ,vec ,n))
     `((movq (offset ,(select-instructions^ vec rs)
@@ -114,7 +115,9 @@
       (movq (global-value rootstack_begin) (var ,rs)))]
 
    ;; For recuring on body of the list
-   [`(,x ...) (select-instructions^ (car x) rs)]
+   [`(,x ...) (let ([ex_stmts (select-instructions^ (car x) rs)]
+                    [ex1_stmts (select-instructions^ (cdr x) rs)])
+        (append ex_stmts ex1_stmts))]
 
    ))
 

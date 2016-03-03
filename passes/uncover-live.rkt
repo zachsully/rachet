@@ -82,7 +82,7 @@
   (lambda (instr after-set)
     (match instr
      [`(,op (offset ,src ,i) (offset ,dst ,j))
-      #:when (addq movq subq)
+      #:when (member op '(addq movq subq))
       (let ([src^ (binary-live src)]
             [dst^ (binary-live dst)])
         (values instr
@@ -90,7 +90,7 @@
                 after-set))]
 
      [`(,op (offset ,src ,i) ,dst)
-      #:when (addq movq subq)
+      #:when (member op '(addq movq subq))
       (let ([src^ (binary-live src)]
             [dst^ (binary-live dst)])
         (values instr
@@ -98,7 +98,7 @@
                 after-set))]
 
      [`(,op ,src (offset ,dst ,j))
-      #:when (addq movq subq)
+      #:when (member op '(addq movq subq))
       (let ([src^ (binary-live src)]
             [dst^ (binary-live dst)])
         (values instr

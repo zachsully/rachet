@@ -336,20 +336,6 @@ void cheney(int64_t** rootstack_ptr)
 */
 void copy_vector(int64_t** vector_ptr_loc)
 {
-  /* int tag = (int) *vector_ptr_loc[0]; */
-  /* int vec_length = get_length(tag) + 1; */
-
-  /* if(is_forwarding(tag)){ */
-  /*   int i = 0; */
-  /*   for(i = 0; i < vec_length; i++) { */
-  /*     *free_ptr = *vector_ptr_loc[i]; */
-  /*     vector_ptr_loc[i] = free_ptr; */
-  /*     free_ptr++; */
-  /*   } */
-  /*   *vector_ptr_loc[0] = *vector_ptr_loc[0] | TAG_IS_NOT_FORWARD_MASK; */
-  /*   *vector_ptr_loc = free_ptr - vec_length; */
-
-  /* } */
   if(!is_forwarding((*vector_ptr_loc)[0])){
 
     int copy_length = get_length((*vector_ptr_loc)[0]) + 1;
@@ -365,6 +351,8 @@ void copy_vector(int64_t** vector_ptr_loc)
 
     *vector_ptr_loc[0] = *vector_ptr_loc[0] | TAG_IS_NOT_FORWARD_MASK;
     vector_ptr_loc = (int64_t**) (free_ptr - (copy_length * (sizeof(int64_t))));
+  } else {
+    // move the to the forwarding pointer
   }
 }
 
