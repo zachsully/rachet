@@ -30,30 +30,47 @@
 
 
 
-   ;; >>           Moving something from the stack to a vec                   <<
-   [`(,op (stack ,a) (offset ,b ,j))
+   ;; >>  Moving something from the stack to a vec, when vec is on the stack  <<
+   [`(movq (stack ,a) (offset (stack ,b-loc) ,j))
     `((pushq (stack ,a))
-      (movq ,b (reg rax))
+      (movq (stack ,b-loc) (reg rax))
       (popq (offset (reg rax) ,j)))]
 
-   [`(,op (offset ,a ,i) (stack ,b))
-    `((pushq (stack ,b))
-      (movq ,a (reg rax))
-      (popq (offset (reg rax) ,i)))]
+   ;; (movq (stack -16) (offset (stack -8) 8))
+   ;; = >
+   ;; pushq -16(%rbp)
+   ;; movq -8(%rbp), %rax
+   ;; popq 8(%rax)
+
+   [`(movq (offset (stack ,a-loc) ,i) (stack ,b))
+    `((pushq (stack ,a-loc))
+      (popq (reg rax))
+      (movq (offset (reg rax) ,i) (reg rax))
+      (movq (reg rax) (stack ,b)))]
+   ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+   ;; >> Moving something from the stack to a vec, when vec NOT on the stack  <<
+   [`(movq (stack ,a) (offset ,b ,j))
+    `((movq (stack ,a) (reg rax))
+      (movq (reg rax) (offset ,b ,j)))]
+
+   [`(movq (offset ,a ,i) (stack ,b))
+    `((movq (offset ,a ,i) (reg rax))
+      (movq (reg rax) (stack ,b)))]
    ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
    ;; >>                 When a vector is on the stack                        <<
-   [`(,op ,a (offset (stack ,loc) ,i))
+   [`(movq ,a (offset (stack ,loc) ,i))
     `((movq (stack ,loc) (reg rax))
-      (,op ,a (offset (reg rax) ,i)))]
+      (movq ,a (offset (reg rax) ,i)))]
 
-   [`(,op (offset (stack ,loc) ,i) ,b)
+   [`(movq (offset (stack ,loc) ,i) ,b)
     `((movq (stack ,loc) (reg rax))
-      (,op (offset (reg rax) ,i) ,b))]
+      (movq (offset (reg rax) ,i) ,b))]
    ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 
 
 

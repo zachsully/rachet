@@ -24,4 +24,4 @@
 
 ;; Parameter that determines the number of registers to be used in the program
 (define register-num
-  (make-parameter 11))
+  (make-parameter 3))
