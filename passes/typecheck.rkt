@@ -12,6 +12,9 @@
 
 (define (typecheck^ env e)
  (match e
+  [`(define (,name (,var : ,vtype) ...) : ,ftype ,body)
+   e]
+
   [(? fixnum?) 'Integer]
 
   [(? boolean?) 'Boolean]
@@ -89,7 +92,7 @@
               "'vector' expects at least one argument")
        (let ([ts (map (lambda (a) (typecheck^ env a)) args)])
          `(Vector ,@ts)))]
-  
+
   [`(vector-ref ,arg ,i)
    (cond
     [(not (integer? i))
@@ -129,4 +132,5 @@
 
 (define (typecheck e)
   (match e
-   [`(program ,e) `(program (type ,(typecheck^ '() e)) ,e)]))
+   [`(program ,defs ... ,e)
+    `(program (type ,(typecheck^ '() e)) ,e)]))
