@@ -12,8 +12,8 @@
 
 (define (typecheck^ env e)
  (match e
-  [`(define (,name (,var : ,vtype) ...) : ,ftype ,body)
-   e]
+  ;; [`(define (,name (,var : ,vtype) ...) : ,ftype ,body)
+  ;;  e]
 
   [(? fixnum?) 'Integer]
 
@@ -132,5 +132,5 @@
 
 (define (typecheck e)
   (match e
-   [`(program ,defs ... ,e)
+   [`(program ,e) ;;`(program ,defs ... ,e)
     `(program (type ,(typecheck^ '() e)) ,e)]))
