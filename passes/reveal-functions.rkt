@@ -3,5 +3,5 @@
 
 (define (reveal-functions p)
   (match p
-   [`(program (defines ,defs ...) ,t ,e)
-    `(program ,t ,e)]))
+   [`(program ,t ,defs ... ,e)
+    `(program ,t ,@defs ,e)]))

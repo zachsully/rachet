@@ -160,6 +160,6 @@
   (match e
    [`(program ,defs ... ,e)
     (let ([defs-env (map define-type defs)])
-      `(program (defines ,@defs)
-		(type ,(typecheck^ defs-env e ))
+      `(program (type ,(typecheck^ defs-env e ))
+		,@defs
 		,e))]))

@@ -21,9 +21,7 @@
       `(let([,newsym ,(uniquify^ env e)])
                      ,(uniquify^ (cons (cons x newsym) env) body)))]
     [`(,op ,es ...)
-     (if (assoc op env)
-	 `(,(lookup op env) ,@(map (lambda (e) (uniquify^ env e)) es))
-	 `(,op ,@(map (lambda (e) (uniquify^ env e)) es)))]
+     `(,(lookup op env op) ,@(map (lambda (e) (uniquify^ env e)) es))]
     ))
 
 ;; takes a definition and creates and assoc for the func name and its new name
@@ -34,9 +32,8 @@
 
 (define (uniquify p)
   (match p
-   [`(program (defines ,defs ...) ,t ,e)
+   [`(program ,t ,defs ... ,e)
     (let ([defs-env (map define-unique defs)])
-      `(program (defines ,@(map (lambda (d)
-				  (uniquify^ defs-env d)) defs))
-		,t
+      `(program ,t
+		,@(map (lambda (d) (uniquify^ defs-env d)) defs)
 		,(uniquify^ defs-env e)))]))
