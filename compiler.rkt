@@ -49,7 +49,7 @@
 ;; (compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
 ;; (compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
-;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 16))
+;; ;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 16))
 ;; (display "tests passed!") (newline)
 
 ;;;;;
@@ -72,14 +72,23 @@
  ;;     (+ x 1))
  ;;   (vector-ref (map-vec add1 (vector 0 41)) 1))
 
+ ;; `(program
+ ;;   (define (add [x : Integer]
+ ;; 		[y : Integer])
+ ;;     : Integer (+ x y))
+ ;;   (add 40 1))
+
  `(program
    (define (add [x : Integer]
  		[y : Integer])
      : Integer (+ x y))
-   (add 40 1))
+   (define (add2 [x : Integer])
+     : Integer (add (add x 1) 1))
+   (add2 40))
 
  `(,typecheck
    ,uniquify
+   ,reveal-functions
    ;; ,flatten
    ;; ,expose-allocation
    ;; ,uncover-call-live-roots
