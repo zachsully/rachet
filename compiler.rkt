@@ -20,7 +20,7 @@
 (provide r4-passes compile-prog)
 
 (define r4-passes `(("uniquify",uniquify,interp-scheme)
-		    ;; ("reveal-functions",reveal-functions,interp-scheme)
+		    ("reveal-functions",reveal-functions,interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("expose-allocation",expose-allocation,interp-C)
                     ("uncover-call-live-roots",uncover-call-live-roots,interp-C)
@@ -62,19 +62,22 @@
 			   out)) p passes)))
 
 (compile-prog
- ;; `(program
- ;;   (define (map-vec [f : (Integer -> Integer)]
- ;; 		    [v : (Vector Integer Integer)])
- ;;     : (Vector Integer Integer)
- ;;     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
- ;;   (define (add1 [x : Integer]) : Integer
- ;;     (+ x 1))
- ;;   (vector-ref (map-vec add1 (vector 0 41)) 1))
  `(program
-   (define (add [x : Integer]
-		[y : Integer])
-     : Integer (+ x y))
-   (add 40 2))
+   (define (map-vec [f : (Integer -> Integer)]
+ 		    [v : (Vector Integer Integer)])
+     : (Vector Integer Integer)
+     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
+   (define (add1 [x : Integer]) : Integer
+     (+ x 1))
+   (vector-ref (map-vec add1 (vector 0 41)) 1))
+ ;; `(program (define (add1 [x : Integer]) : Integer
+ ;; 	     (+ x 1))
+ ;; 	   add1)
+ ;; `(program
+ ;;   (define (add [x : Integer]
+ ;; 		[y : Integer])
+ ;;     : Integer (+ x y))
+ ;;   (add 40 1))
 
  `(,typecheck
    ;; ,uniquify

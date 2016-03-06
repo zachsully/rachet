@@ -125,9 +125,42 @@
              [`,_
               (error 'typecheck^
                      "'vector-set!' expects a vector for the first arg")]))])]
+
+  [`(,func ,args ...)
+   (let ([arg-types (map (lambda (a)
+			   (typecheck^ env a)) args)]
+	 [funk-t    (lookup func env)])
+     (cond
+      [(not (eq? (length args)
+		 (- (length funk-t) 2)))
+       (error 'typecheck^
+	      (string-append (symbol->string func)
+			     " expects "
+			     (number->string (- (length funk-t) 1))
+			     " args; given "
+			     (number->string (length args))))]
+      [(not (foldr (lambda (left right acc) (and acc (equal? left right)))
+		   #t
+		   arg-types
+		   (reverse (cddr (reverse funk-t)))))
+       (error 'typecheck^
+	      (string-append (symbol->string func)
+			     ": argument types don't match"))]
+      [else (car (reverse funk-t))]
+      ))]
   ))
+
+;; takes a definition and creates and association for the func name and its type
+(define (define-type d)
+  (match d
+   [`(define (,name (,vars : ,ts) ...) : ,t ,_)
+    (cons name `(,@ts -> ,t))]))
 
 (define (typecheck e)
   (match e
    [`(program ,defs ... ,e)
-    `(program (type ,(typecheck^ '() e)) ,e)]))
+    (let ([defs-env (map define-type defs)]
+	  [_        (void)])
+      `(program (defines ,defs)
+		(type ,(typecheck^ defs-env e ))
+		,e))]))
