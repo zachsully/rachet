@@ -21,10 +21,22 @@
       `(let([,newsym ,(uniquify^ env e)])
                      ,(uniquify^ (cons (cons x newsym) env) body)))]
     [`(,op ,es ...)
-     `(,op ,@(map (lambda (e) (uniquify^ env e)) es))]
+     (if (assoc op env)
+	 `(,(lookup op env) ,@(map (lambda (e) (uniquify^ env e)) es))
+	 `(,op ,@(map (lambda (e) (uniquify^ env e)) es)))]
     ))
+
+;; takes a definition and creates and assoc for the func name and its new name
+(define (define-unique d)
+  (match d
+   [`(define (,name (,vars : ,ts) ...) : ,t ,_)
+    (cons name (gensym (string-append (symbol->string name) ".")))]))
 
 (define (uniquify p)
   (match p
    [`(program (defines ,defs ...) ,t ,e)
-    `(program (defines ,@defs) ,t ,(uniquify^ '() e))]))
+    (let ([defs-env (map define-unique defs)])
+      `(program (defines ,@(map (lambda (d)
+				  (uniquify^ defs-env d)) defs))
+		,t
+		,(uniquify^ defs-env e)))]))

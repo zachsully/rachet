@@ -159,8 +159,7 @@
 (define (typecheck e)
   (match e
    [`(program ,defs ... ,e)
-    (let ([defs-env (map define-type defs)]
-	  [_        (void)])
+    (let ([defs-env (map define-type defs)])
       `(program (defines ,@defs)
 		(type ,(typecheck^ defs-env e ))
 		,e))]))
