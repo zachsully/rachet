@@ -29,7 +29,8 @@
 			   (cons v (gensym (string-append
 					    (symbol->string v) "."))))
 			 vars)])
-       `(define (,(lookup name env ))
+       `(define (,(lookup name env) ,@(map (lambda (v t)
+					     `(,(lookup v var-env) : ,t)) vars ts))
 	  :
 	  ,t
 	  ,(uniquify^ (append var-env env) e)))]

@@ -63,20 +63,20 @@
 			   out)) p passes)))
 
 (compile-prog
- `(program
-   (define (map-vec [f : (Integer -> Integer)]
- 		    [v : (Vector Integer Integer)])
-     : (Vector Integer Integer)
-     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
-   (define (add1 [x : Integer]) : Integer
-     (+ x 1))
-   (vector-ref (map-vec add1 (vector 0 41)) 1))
-
  ;; `(program
- ;;   (define (add [x : Integer]
- ;; 		[y : Integer])
- ;;     : Integer (+ x y))
- ;;   (add 40 1))
+ ;;   (define (map-vec [f : (Integer -> Integer)]
+ ;; 		    [v : (Vector Integer Integer)])
+ ;;     : (Vector Integer Integer)
+ ;;     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
+ ;;   (define (add1 [x : Integer]) : Integer
+ ;;     (+ x 1))
+ ;;   (vector-ref (map-vec add1 (vector 0 41)) 1))
+
+ `(program
+   (define (add [x : Integer]
+ 		[y : Integer])
+     : Integer (+ x y))
+   (add 40 1))
 
  `(,typecheck
    ,uniquify
