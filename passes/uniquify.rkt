@@ -26,5 +26,5 @@
 
 (define (uniquify p)
   (match p
-   [`(program ,t ,e)
-    `(program ,t ,(uniquify^ '() e))]))
+   [`(program (defines ,defs ...) ,t ,e)
+    `(program (defines ,@defs) ,t ,(uniquify^ '() e))]))

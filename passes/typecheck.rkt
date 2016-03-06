@@ -161,6 +161,6 @@
    [`(program ,defs ... ,e)
     (let ([defs-env (map define-type defs)]
 	  [_        (void)])
-      `(program (defines ,defs)
+      `(program (defines ,@defs)
 		(type ,(typecheck^ defs-env e ))
 		,e))]))
