@@ -10,15 +10,31 @@
        ,(rev-funk env body))]
 
    [`(define (,name (,vars : ,ts) ...) : ,t ,e)
-    `(define (,name (,vars : ,ts) ...) : ,t ,(rev-funk env e))]
+    `(define (,name ,@(map (lambda (v t)
+			     `(,v : ,t)) vars ts))
+       : ,t
+       ,(rev-funk (foldr (lambda (v t a)
+			   (if (is-function? t)
+			       (cons `(,v . (function-ref ,v)) a)
+			       a)) env vars ts)
+		  e))]
 
    [`(,op ,args ...)
     (if (not (eq? (lookup op env #f) #f))
-	`(app ,(lookup op env #f) ,@(map (lambda (a) (rev-funk env a)) args))
-	e)]
+	`(app ,(lookup op env #f) ,@(map (lambda (a)
+					   (rev-funk env a)) args))
+	`(,op ,@(map (lambda (a) (rev-funk env a)) args)))]
 
    [else e]
    ))
+
+;; returns true if the type is that of a funciton
+(define (is-function? t)
+  (cond
+   [(not (list? t)) #f]
+   [else (match (reverse t)
+		[`(,_ -> ,_ ...) #t]
+		[else #f])]))
 
 ;; takes a definition and creates and assoc for the func name and its new name
 (define (define-env d)
@@ -31,7 +47,6 @@
   (match p
    [`(program ,t ,defs ... ,e)
     (let ([funk-env (map define-env defs)])
-      (print funk-env)
       `(program ,t
 		,@(map (lambda (d)
 			 (rev-funk funk-env d))

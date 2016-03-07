@@ -77,23 +77,3 @@
       `(program ,(append vars voids)
                 ,t
                 ,@(cons `(initialize ,(rootstack-size) ,(heap-size)) stmts)))]))
-
-
-
-;; ;; THIS IS A BANDAID
-;; ;; removes the assignment statement at the end of a side-effecting if
-;; ;; see test 3_15
-;; (define (remove-void-ifs p)
-;;   (match p
-;;    [`(program ,vars ,t ,instr ...)
-;;     (let ([void-ifs
-;; 	   (map car (filter (lambda (vs) (equal? 'Void (cdr vs))) vars))])
-;;       (if (empty? void-ifs)
-;; 	  p
-;; 	  `(program ,vars
-;; 		    ,t
-;; 		    ,@(filter (lambda (i)
-;; 				(match i
-;; 				 [`(assign ,var ,_)
-;; 				  (not (member var void-ifs))]
-;; 				 [else #t])) instr))))]))

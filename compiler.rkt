@@ -45,12 +45,12 @@
 ;; (interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
 ;; (interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
 
-;; (compiler-tests "r1-passes" typecheck r4-passes "r1" (range 1 20))
-;; (compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
-;; (compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
-;; (compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
-;; ;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 16))
-;; (display "tests passed!") (newline)
+(compiler-tests "r1-passes" typecheck r4-passes "r1" (range 1 20))
+(compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
+(compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
+(compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
+;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 16))
+(display "tests passed!") (newline)
 
 ;;;;;
 ;;;;; UNIT TESTING
@@ -63,14 +63,14 @@
 			   out)) p passes)))
 
 (compile-prog
- ;; `(program
- ;;   (define (map-vec [f : (Integer -> Integer)]
- ;; 		    [v : (Vector Integer Integer)])
- ;;     : (Vector Integer Integer)
- ;;     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
- ;;   (define (add1 [x : Integer]) : Integer
- ;;     (+ x 1))
- ;;   (vector-ref (map-vec add1 (vector 0 41)) 1))
+ `(program
+   (define (map-vec [f : (Integer -> Integer)]
+ 		    [v : (Vector Integer Integer)])
+     : (Vector Integer Integer)
+     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
+   (define (add1 [x : Integer]) : Integer
+     (+ x 1))
+   (vector-ref (map-vec add1 (vector 0 41)) 1))
 
  ;; `(program
  ;;   (define (add [x : Integer]
@@ -78,18 +78,18 @@
  ;;     : Integer (+ x y))
  ;;   (add 40 1))
 
- `(program
-   (define (add [x : Integer]
- 		[y : Integer])
-     : Integer (+ x y))
-   (define (add2 [x : Integer])
-     : Integer (add (add x 1) 1))
-   (add2 40))
+ ;; `(program
+ ;;   (define (add [x : Integer]
+ ;; 		[y : Integer])
+ ;;     : Integer (+ x y))
+ ;;   (define (add2 [x : Integer])
+ ;;     : Integer (add (add x 1) 1))
+ ;;   (add2 40))
 
  `(,typecheck
    ,uniquify
    ,reveal-functions
-   ;; ,flatten
+   ,flatten
    ;; ,expose-allocation
    ;; ,uncover-call-live-roots
    ;; ,select-instructions

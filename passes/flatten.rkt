@@ -117,15 +117,47 @@
                      [(exN stmtsN) (flatten^ narg need-var)])
           (values `(vector-set! ,exA ,i ,exN) (append stmtsA stmtsN))))]
 
+   [`(function-ref ,f)
+    (let-values ([(exF stmtsF) (flatten^ f need-var)])
+      (let ([tmp (gensym "funk-ref.")])
+	(values tmp (append stmtsF
+			  `((assign ,tmp (function-ref ,exF)))))))]
+
+   [`(app ,f ,args ...)
+    (let ([args^
+	   (foldl (lambda (x acc)
+                    (let-values ([(ex st) (flatten^ x need-var)])
+		      (cons
+		       (append (car acc) `(,ex))
+		       (append st (cdr acc)))))
+		  (cons '() '())
+                  args)]
+	  [tmp (gensym "app-funk.")])
+      (let-values ([(exF stmtsF) (flatten^ f need-var)])
+	(values tmp (append stmtsF
+			  (cdr args^)
+			  `((assign ,tmp (app ,exF ,@(car args^))))))))]
    )))
 
+(define (flatten-define d)
+  (match d
+   [`(define (,name (,vars : ,ts) ...) : ,t ,e)
+    (let-values ([(ex stmts) (flatten^ e #t)])
+      `(define (,name ,@(map (lambda (v t)
+			       `(,v : ,t)) vars ts))
+	 : ,t
+	 ,(remove-duplicates (unique-vars stmts '()))
+	 ,@(append stmts `((return ,ex)))))]))
+
+;; MAIN FLATTEN funk
 (define (flatten p)
   (match p
-   [`(program ,t ,expr)
+   [`(program ,t ,defs ... ,expr)
     (let-values ([(ex rhs) (flatten^ expr #t)])
       (let ([vars (remove-duplicates (unique-vars rhs '()))])
         `(program ,vars
                   ,t
+		  ;; (defines ,@(map flatten-define defs))
                   ,@(append rhs `((return ,ex))))))]))
 
 (define unique-vars-helper
