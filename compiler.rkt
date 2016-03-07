@@ -19,7 +19,7 @@
 
 (provide r4-passes compile-prog)
 
-(define r4-passes `(;; ("uniquify",uniquify,interp-scheme)
+(define r4-passes `(("uniquify",uniquify,interp-scheme)
 		    ;; ("reveal-functions",reveal-functions,interp-scheme)
                     ;; ("flatten",flatten,interp-C)
                     ;; ("expose-allocation",expose-allocation,interp-C)
@@ -73,11 +73,11 @@
  ;;     (+ x 1))
  ;;   (vector-ref (map-vec add1 (vector 0 41)) 1))
 
- `(program
-   (define (add [x : Integer]
- 		[y : Integer])
-     : Integer (+ x y))
-   (add 40 1))
+ ;; `(program
+ ;;   (define (add [x : Integer]
+ ;; 		[y : Integer])
+ ;;     : Integer (+ x y))
+ ;;   (add 40 1))
 
  ;; `(program
  ;;   (define (add [x : Integer]
@@ -86,6 +86,20 @@
  ;;   (define (add2 [x : Integer])
  ;;     : Integer (add (add x 1) 1))
  ;;   (add2 40))
+
+ `(program
+   (define (even? [x : Integer]) : Boolean
+     (if (eq? x 0)
+ 	 #t
+ 	 (odd? (+ (- 1) x))))
+   (define (odd? [x : Integer]) : Boolean
+     (if (eq? x 0)
+ 	 #f
+ 	 (even? (+ (- 1) x))))
+   (let ([vec (vector odd?)])
+     (let ([dummy (vector-set! vec 0 even?)])
+       (if ((vector-ref vec 0) 21) 999 42)))
+   )
 
  `(,typecheck
    ,uniquify

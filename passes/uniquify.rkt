@@ -10,7 +10,6 @@
 ;; Pass makes sure all of the vars in the racket program are unique
 ;;
 
-
 (define (uniquify^ env e)
   (match e
     [(? symbol?) (lookup e env)]
@@ -19,10 +18,51 @@
 
     [(? boolean?) e]
 
-    [`(let([,x ,e]) ,body)
+    [`(read) e]
+
+    [`(+ ,left ,right)
+     `(+ ,(uniquify^ env left)
+	 ,(uniquify^ env right))]
+
+    [`(- ,expr)
+     `(- ,(uniquify^ env expr))]
+
+    [`(not ,expr)
+     `(not ,(uniquify^ env expr))]
+
+    [`(and ,left ,right)
+     `(and ,(uniquify^ env left)
+	   ,(uniquify^ env right))]
+
+    [`(or ,left ,right)
+     `(or ,(uniquify^ env left)
+	  ,(uniquify^ env right))]
+
+    [`(let ([,x ,e]) ,body)
      (let ([newsym (gensym "tmp.")])
       `(let([,newsym ,(uniquify^ env e)])
 	 ,(uniquify^ (cons (cons x newsym) env) body)))]
+
+    [`(eq? ,left ,right)
+     `(eq? ,(uniquify^ env left)
+	   ,(uniquify^ env right))]
+
+    [`(if ,cnd ,thn ,els)
+     `(if ,(uniquify^ env cnd)
+	  ,(uniquify^ env thn)
+	  ,(uniquify^ env els))]
+
+    [`(vector ,args ...)
+     `(vector ,@(map (lambda (a) (uniquify^ env a)) args))]
+
+    [`(vector-ref ,arg ,i)
+     `(vector-ref ,(uniquify^ env arg)
+		  ,i)]
+
+    [`(vector-set! ,arg ,i ,narg)
+     `(vector-set! ,(uniquify^ env arg)
+		   ,i
+		   ,(uniquify^ env narg))]
 
     [`(define (,name (,vars : ,ts) ...) : ,t ,e)
      (let ([var-env (map (lambda (v)
@@ -37,7 +77,9 @@
 	  ,(uniquify^ (append var-env env) e)))]
 
     [`(,op ,es ...)
-     `(,(lookup op env op) ,@(map (lambda (e) (uniquify^ env e)) es))]
+     (let ([op^ (uniquify^ env op)])
+       `(,(lookup op^ env op^)
+	 ,@(map (lambda (e) (uniquify^ env e)) es)))]
 
     ))
 
