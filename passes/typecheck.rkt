@@ -126,10 +126,21 @@
               (error 'typecheck^
                      "'vector-set!' expects a vector for the first arg")]))])]
 
+  [`(define (,name (,vars : ,ts) ...) : ,t ,ed)
+   (let ([env^ (append (map cons vars ts) env)])
+     (cond
+      [(not (equal? (typecheck^ env^ ed) t))
+       (error 'typecheck^
+      	      (string-append
+      	       "return type does not match definition in "
+      	       (symbol->string name)))]
+      [else (void)]))]
+
   [`(,func ,args ...)
    (let ([arg-types (map (lambda (a)
 			   (typecheck^ env a)) args)]
-	 [funk-t    (lookup func env)])
+	 [funk-t    (typecheck^ env func) ;;(lookup func env)
+		    ])
      (cond
       [(not (eq? (length args)
 		 (- (length funk-t) 2)))
@@ -159,7 +170,10 @@
 (define (typecheck e)
   (match e
    [`(program ,defs ... ,e)
-    (let ([defs-env (map define-type defs)])
-      `(program (type ,(typecheck^ defs-env e ))
+    (let* ([defs-env (map define-type defs)]
+	   [_        (map (lambda (d)
+	   		    (typecheck^ defs-env d)) defs)]
+	   )
+      `(program (type ,(typecheck^ defs-env e))
 		,@defs
 		,e))]))

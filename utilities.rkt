@@ -23,7 +23,7 @@
 ;; The higher the setting the more information is reported.
 (define debug-level
   (make-parameter
-   1    ;; If you have to hard code me change 0 to 1-4
+   2    ;; If you have to hard code me change 0 to 1-4
    (lambda (d)
      (unless (exact-nonnegative-integer? d)
        (error 'debug-state "expected nonnegative-integer in ~a" d))
