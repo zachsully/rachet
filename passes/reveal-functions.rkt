@@ -3,27 +3,35 @@
 (provide reveal-functions)
 
 
-(define (rev-funk env e)
+(define (rev-funk v-env f-env e)
+  (print v-env)
+  (newline)
   (match e
    [`(let([,x ,e]) ,body)
-    `(let([,x ,(rev-funk env e)])
-       ,(rev-funk env body))]
+    (let ([foo (rev-funk v-env f-env e)])
+      `(let([,x ,foo])
+	 ,(rev-funk (cons (cons x foo) v-env) f-env body)))]
 
    [`(define (,name (,vars : ,ts) ...) : ,t ,e)
     `(define (,name ,@(map (lambda (v t)
 			     `(,v : ,t)) vars ts))
        : ,t
-       ,(rev-funk (foldr (lambda (v t a)
-			   (if (is-function? t)
-			       (cons `(,v . (function-ref ,v)) a)
-			       a)) env vars ts)
+       ,(rev-funk v-env (foldr (lambda (v t a)
+				 (if (is-function? t)
+				     (cons `(,v . (function-ref ,v)) a)
+				     a)) f-env vars ts)
 		  e))]
 
    [`(,op ,args ...)
-    (if (not (eq? (lookup op env #f) #f))
-	`(app ,(lookup op env #f) ,@(map (lambda (a)
-					   (rev-funk env a)) args))
-	`(,op ,@(map (lambda (a) (rev-funk env a)) args)))]
+    (cond
+     [(not (eq? (lookup op f-env #f) #f))
+      `(app ,(lookup op f-env) ,@(map (lambda (a)
+					(rev-funk v-env f-env a)) args))]
+     [(not (eq? (lookup (lookup op v-env op) f-env #f) #f))
+      `(app ,(lookup (lookup op v-env) f-env)
+	    ,@(map (lambda (a)
+		     (rev-funk v-env f-env a)) args))]
+     [else `(,op ,@(map (lambda (a) (rev-funk v-env f-env a)) args))])]
 
    [else e]
    ))
@@ -49,6 +57,6 @@
     (let ([funk-env (map define-env defs)])
       `(program ,t
 		,@(map (lambda (d)
-			 (rev-funk funk-env d))
+			 (rev-funk '() funk-env d))
 		       defs)
-		,(rev-funk funk-env e)))]))
+		,(rev-funk '() funk-env e)))]))

@@ -157,7 +157,7 @@
       (let ([vars (remove-duplicates (unique-vars rhs '()))])
         `(program ,vars
                   ,t
-		  ;; (defines ,@(map flatten-define defs))
+		  (defines ,(map flatten-define defs))
                   ,@(append rhs `((return ,ex))))))]))
 
 (define unique-vars-helper
@@ -174,4 +174,5 @@
         ans
         (unique-vars (cdr instrs)
                      (append ans
-                             (unique-vars-helper (car instrs)))))))
+                             (unique-vars-helper (car instrs)))))
+    ))

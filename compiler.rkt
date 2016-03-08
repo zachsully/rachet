@@ -20,8 +20,8 @@
 (provide r4-passes compile-prog)
 
 (define r4-passes `(("uniquify",uniquify,interp-scheme)
-		    ;; ("reveal-functions",reveal-functions,interp-scheme)
-                    ;; ("flatten",flatten,interp-C)
+		    ("reveal-functions",reveal-functions,interp-scheme)
+                    ("flatten",flatten,interp-C)
                     ;; ("expose-allocation",expose-allocation,interp-C)
                     ;; ("uncover-call-live-roots",uncover-call-live-roots,interp-C)
                     ;; ("select instructions",select-instructions,interp-x86)
@@ -40,18 +40,18 @@
 ;;;;; CLASS TESTS
 ;;;;;
 
-(interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
-(interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
-(interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
-(interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
-(interp-tests "r4" typecheck r4-passes interp-scheme "r4" (range 1 20))
+;; (interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
+;; (interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
+;; (interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
+;; (interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
+;; (interp-tests "r4" typecheck r4-passes interp-scheme "r4" (range 1 20))
 
 ;; (compiler-tests "r1-passes" typecheck r4-passes "r1" (range 1 20))
 ;; (compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
 ;; (compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
 ;; ;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 16))
-(display "tests passed!") (newline)
+;; (display "tests passed!") (newline)
 
 ;;;;;
 ;;;;; UNIT TESTING
@@ -79,27 +79,20 @@
  ;;     : Integer (+ x y))
  ;;   (add 40 1))
 
- ;; `(program
- ;;   (define (add [x : Integer]
- ;; 		[y : Integer])
- ;;     : Integer (+ x y))
- ;;   (define (add2 [x : Integer])
- ;;     : Integer (add (add x 1) 1))
- ;;   (add2 40))
-
  `(program
    (define (even? [x : Integer]) : Boolean
      (if (eq? x 0)
- 	 #t
- 	 (odd? (+ (- 1) x))))
+	 #t
+	 (odd? (+ (- 1) x))))
    (define (odd? [x : Integer]) : Boolean
      (if (eq? x 0)
- 	 #f
- 	 (even? (+ (- 1) x))))
+	 #f
+	 (even? (+ (- 1) x))))
    (let ([vec (vector odd?)])
      (let ([dummy (vector-set! vec 0 even?)])
        (if ((vector-ref vec 0) 21) 999 42)))
    )
+
 
  `(,typecheck
    ,uniquify
