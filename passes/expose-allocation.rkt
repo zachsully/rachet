@@ -3,7 +3,7 @@
 (require "../uncover-types.rkt")
 (require "../runtime-config.rkt")
 (provide expose-allocation)
-
+(require racket/pretty)
 ;;
 ;; Expose-Allocation
 ;;
@@ -27,7 +27,7 @@
 
 (define (expose-allocation p)
   (match p
-   [`(program ,extra ,t ,stmts ...)
+   [`(program ,vars ,t ,defines ,stmts ...)
     (let* ([types (uncover-types p)]
            [stmts^ (foldr
                     (lambda (stmt acc)
@@ -44,11 +44,41 @@
                                    ,@(car vsets))
                                  acc))]
 
-                      [`,_ (append `(,stmt) acc)])) '() stmts)])
+                      [`,_ (append `(,stmt) acc)]))
+                    '()
+                    stmts)]
+           [defs (match defines
+                  [`(defines ,defs^ ...) defs^])]
+           [defines^
+	     (map
+	      (lambda (def)
+		(match def
+                 [`(define (,f ,vars ...) : ,rt ,tmpVar ,exprs)
+		  (append `(define (,f ,@vars) : ,rt ,tmpVar)
+			  (foldr
+			   (lambda (stmt acc)
+			     (match stmt
+                              [`(assign ,var (vector ,es ...))
+			       (let* ([vsets (vector-setting var es)]
+				      [bytes (+ 8 (* 8 (cdr vsets)))])
+				 (append `((if (collection-needed? ,bytes)
+					       ((collect ,bytes))
+					       ())
+					   (assign ,var
+						   (allocate
+						    ,(length es)
+						    ,(lookup var types)))
+					   ,@(car vsets))
+					 acc))]
+			      [`,_ (append `(,stmt) acc)]))
+			   '()
+			   exprs))]))
+	      defs)])
       (void-vec-sets
-	`(program ,(uncover-types p)
-		  ,t
-		  ,@stmts^))
+        `(program ,vars
+                  ,t
+                  (defines ,@defines^)
+                  ,@stmts^))
       )]))
 
 (define (vector-setting var es)
@@ -65,7 +95,7 @@
 ;; the variables
 (define (void-vec-sets p)
   (match p
-   [`(program ,vars ,t ,stmts ...)
+   [`(program ,vars ,t ,def ,stmts ...)
     (let ([voids (foldr
                   (lambda (s acc)
                     (match s
@@ -76,4 +106,5 @@
                   stmts)])
       `(program ,(append vars voids)
                 ,t
+                ,def
                 ,@(cons `(initialize ,(rootstack-size) ,(heap-size)) stmts)))]))
