@@ -4,6 +4,7 @@
 (require "../runtime-config.rkt")
 (provide expose-allocation)
 (require racket/pretty)
+
 ;;
 ;; Expose-Allocation
 ;;
@@ -47,8 +48,10 @@
                       [`,_ (append `(,stmt) acc)]))
                     '()
                     stmts)]
+
            [defs (match defines
-                  [`(defines ,defs^ ...) defs^])]
+	          [`(defines ,defs^) defs^])]
+
            [defines^
 	     (map
 	      (lambda (def)

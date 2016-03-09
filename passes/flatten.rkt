@@ -154,11 +154,13 @@
   (match p
    [`(program ,t ,defs ... ,expr)
     (let-values ([(ex rhs) (flatten^ expr #t)])
-      (let ([vars (remove-duplicates (unique-vars rhs '()))])
-        `(program ,vars
+      (let ([vars (remove-duplicates (unique-vars rhs '()))]
+	    [defs^ (map flatten-define defs)])
+	`(program ,vars
                   ,t
-		  (defines ,(map flatten-define defs))
-                  ,@(append rhs `((return ,ex))))))]))
+		  (defines ,defs^)
+                  ,@(append rhs `((return ,ex))))
+        ))]))
 
 (define unique-vars-helper
   (lambda (instr)
