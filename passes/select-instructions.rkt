@@ -1,4 +1,5 @@
 #lang racket
+(require "../utilities.rkt")
 (provide select-instructions)
 
 ;;
@@ -18,6 +19,13 @@
    [(? integer?) `(int ,e)]
 
    [(? symbol?) `(var ,e)]
+
+   [`(assign ,v (function-ref ,f))
+    `((leaq (function-ref ,f) ,v))]
+
+   [`(assign ,v (app ,funk ,args ...))
+    `((indirect-callq ,funk)
+      (movq (reg rax) ,v))]
 
    [`(assign ,v (read))
     `((callq read_int)
@@ -123,16 +131,29 @@
 
 (define (select-instructions e)
  (match e
-  [`(program ,vs ,type ,stmts ...)
-   ((lambda (stmts^)
-      `(program ,(remove-duplicates (append vs (get-vars stmts^ '())))
+  [`(program ,vs ,type (defines ,defs ...) ,stmts ...)
+   (let* ([rs     (gensym "rootstack.")]
+	  [stmts^ (append-map (lambda (s)
+				(select-instructions^ s rs)) stmts)]
+	  [defs^  (map select-instructions defs)])
+     `(program ,(remove-duplicates (append vs (get-vars stmts^ '())))
 	       ,type
-	       ,@stmts^))
-    (let ([rs (gensym "rootstack.")])
-      ((lambda (f) (foldr f '() stmts))
-       (lambda (stmt acc)
-	 (append (select-instructions^ stmt rs) acc)))))]
-  ))
+	       (defines ,@defs^)
+	       ,@stmts^))]
+
+  [`(define (,f ,args ...) : ,rt ,gen-vars ,stmts ...)
+   (let* ([rs        (gensym "rootstack.")]
+	  [stmts^    (append-map (lambda (s)
+				  (select-instructions^ s rs)) stmts)]
+	  [args      (remove-duplicates (append gen-vars
+						(get-vars stmts^ '())))]
+	  [max-stack (let ([ms (- (length args)
+				  (vector-length arg-registers))])
+		       (if (< ms 0) 0 ms))])
+     `(define (,f)
+	,(+ (length args) (length gen-vars))
+	(,args ,max-stack)
+	,@stmts^))]))
 
 (define (push-live-roots vars rootstack)
   (car

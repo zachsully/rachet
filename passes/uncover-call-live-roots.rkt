@@ -3,11 +3,19 @@
 
 (define (uncover-call-live-roots p)
   (match p
-   [`(program ,vars ,t ,stmts ...)
-    (let ([root-afters (live-after-roots stmts)])
-      `(program ,(map (lambda (vs) (car vs)) vars)
+   [`(program ,vars ,t (defines ,defs ...) ,stmts ...)
+    (let ([root-afters (live-after-roots stmts)]
+	  [defs^       (map uncover-call-live-roots defs)])
+      `(program ,vars
                 ,t
-                ,@(apply-live-roots root-afters)))]))
+		(defines ,@defs)
+                ,@(apply-live-roots root-afters)))]
+   [`(define (,f ,vars ...) : ,rt ,gen-vars ,stmts ...)
+    (let ([root-afters (live-after-roots stmts)])
+      `(define (,f ,vars ...)
+	 : ,rt
+	 ,gen-vars
+	 ,@(apply-live-roots root-afters)))]))
 
 (define (apply-live-roots stmts)
  ((lambda (f)

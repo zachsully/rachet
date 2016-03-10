@@ -23,8 +23,8 @@
 		    ("reveal-functions",reveal-functions,interp-scheme)
                     ("flatten",flatten,interp-C)
                     ("expose-allocation",expose-allocation,interp-C)
-                    ;; ("uncover-call-live-roots",uncover-call-live-roots,interp-C)
-                    ;; ("select instructions",select-instructions,interp-x86)
+                    ("uncover-call-live-roots",uncover-call-live-roots,interp-C)
+                    ("select instructions",select-instructions,interp-x86)
                     ;; ("uncover-live",uncover-live,interp-x86)
                     ;; ("build-interference",build-interference,interp-x86)
                     ;; ("allocate-registers",allocate-registers,interp-x86)
@@ -40,18 +40,18 @@
 ;;;;; CLASS TESTS
 ;;;;;
 
-(interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
-(interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
-(interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
-(interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
-(interp-tests "r4" typecheck r4-passes interp-scheme "r4" (range 1 20))
+;; (interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
+;; (interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
+;; (interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
+;; (interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
+;; (interp-tests "r4" typecheck r4-passes interp-scheme "r4" (range 1 20))
 
 ;; (compiler-tests "r1-passes" typecheck r4-passes "r1" (range 1 20))
 ;; (compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
 ;; (compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
 ;; ;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 20))
-(display "tests passed!") (newline)
+;; (display "tests passed!") (newline)
 
 ;;;;;
 ;;;;; UNIT TESTING
@@ -63,55 +63,53 @@
 			   ;; (display "  =>") (newline)
 			   out)) p passes)))
 
-;; (compile-prog
-;;  ;; `(program
-;;  ;;   (define (map-vec [f : (Integer -> Integer)]
-;;  ;; 		    [v : (Vector Integer Integer)])
-;;  ;;     : (Vector Integer Integer)
-;;  ;;     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
-;;  ;;   (define (add1 [x : Integer]) : Integer
-;;  ;;     (+ x 1))
-;;  ;;   (vector-ref (map-vec add1 (vector 0 41)) 1))
+(compile-prog
+ ;; `(program
+ ;;   (define (map-vec [f : (Integer -> Integer)]
+ ;; 		    [v : (Vector Integer Integer)])
+ ;;     : (Vector Integer Integer)
+ ;;     (vector (f (vector-ref v 0)) (f (vector-ref v 1))))
+ ;;   (define (add1 [x : Integer]) : Integer
+ ;;     (+ x 1))
+ ;;   (vector-ref (map-vec add1 (vector 0 41)) 1))
 
-;;  ;; `(program
-;;  ;;   (define (add [x : Integer]
-;;  ;; 		[y : Integer])
-;;  ;;     : Integer (+ x y))
-;;  ;;   (add 40 1))
+ `(program
+   (define (add [x : Integer]
+ 		[y : Integer])
+     : Integer (+ x y))
+   (add 40 1))
 
-;;  `(program
-;;    (define (mapint [fun : (Integer -> Integer)]
-;; 		   [v : (Vector Integer Integer Integer)])
-;;      : (Vector Integer Integer Integer)
-;;      (vector (fun (vector-ref v 0))
-;; 	     (fun (vector-ref v 1))
-;; 	     (fun (vector-ref v 2))))
-;;    (define (add1 [x : Integer]) : Integer
-;;      (+ x 1))
-;;    (let ([vec (vector 1 2 3)])
-;;      (let ([vec2 (mapint add1 vec)])
-;;        (+ (vector-ref vec2 0)
-;; 	  (+ (vector-ref vec2 1)
-;; 	     (+ (vector-ref vec2 2) 33)))))
+ ;; `(program
+ ;;   (define (mapint [fun : (Integer -> Integer)]
+ ;; 		   [v : (Vector Integer Integer Integer)])
+ ;;     : (Vector Integer Integer Integer)
+ ;;     (vector (fun (vector-ref v 0))
+ ;; 	     (fun (vector-ref v 1))
+ ;; 	     (fun (vector-ref v 2))))
+ ;;   (define (add1 [x : Integer]) : Integer
+ ;;     (+ x 1))
+ ;;   (let ([vec (vector 1 2 3)])
+ ;;     (let ([vec2 (mapint add1 vec)])
+ ;;       (+ (vector-ref vec2 0)
+ ;; 	  (+ (vector-ref vec2 1)
+ ;; 	     (+ (vector-ref vec2 2) 33)))))
 
 
-;;  )
-;;  `(,typecheck
-;;    ,uniquify
-;;    ,reveal-functions
-;;    ,flatten
-;;    ,(lambda (p) (newline) (pretty-print p) (newline) p)
-;;    ,expose-allocation
-;;    ;; ,uncover-call-live-roots
-;;    ;; ,select-instructions
-;;    ;; ,uncover-live
-;;    ;; ,build-interference
-;;    ;; ,allocate-registers
-;;    ;; ,assign-homes
-;;    ;; ,lower-conditionals
-;;    ;; ,patch-instructions
-;;    ;; ,print-x86
-;;    ;; ,display
-;;    ,pretty-print
-;;    )
-;; )
+ `(,typecheck
+   ,uniquify
+   ,reveal-functions
+   ,flatten
+   ,expose-allocation
+   ,uncover-call-live-roots
+   ,select-instructions
+   ;; ,uncover-live
+   ;; ,build-interference
+   ;; ,allocate-registers
+   ;; ,assign-homes
+   ;; ,lower-conditionals
+   ;; ,patch-instructions
+   ;; ,print-x86
+   ;; ,display
+   ,pretty-print
+   )
+)
