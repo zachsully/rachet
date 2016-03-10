@@ -50,7 +50,7 @@
 ;; (compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
 ;; (compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
-;; ;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 20))
+;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 20))
 ;; (display "tests passed!") (newline)
 
 ;;;;;

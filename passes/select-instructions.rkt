@@ -129,6 +129,7 @@
 
    ))
 
+;; MAIN selection instructions
 (define (select-instructions e)
  (match e
   [`(program ,vs ,type (defines ,defs ...) ,stmts ...)
@@ -143,17 +144,22 @@
 
   [`(define (,f ,args ...) : ,rt ,gen-vars ,stmts ...)
    (let* ([rs        (gensym "rootstack.")]
+	  [num-args  (length args)]
 	  [stmts^    (append-map (lambda (s)
 				  (select-instructions^ s rs)) stmts)]
 	  [args      (remove-duplicates (append gen-vars
 						(get-vars stmts^ '())))]
-	  [max-stack (let ([ms (- (length args)
+	  [max-stack (let ([ms (- num-args
 				  (vector-length arg-registers))])
 		       (if (< ms 0) 0 ms))])
      `(define (,f)
-	,(+ (length args) (length gen-vars))
+	,(+ num-args (length gen-vars))
 	(,args ,max-stack)
 	,@stmts^))]))
+
+
+
+
 
 (define (push-live-roots vars rootstack)
   (car
@@ -178,6 +184,8 @@
 		  (+ 1 (cdr acc))))
 	  '(() . 1)
 	  vars)))
+
+
 
 ;; We run these after select-instructions is complete to add our
 ;; new gensym vars to the front of our prog
@@ -211,3 +219,22 @@
 					 n)
 		       mask)
 	 . ,(+ 1 n))))))
+
+;; takes a list of args to be passed to a function and returns a list of
+;;  instrucions putting them in the arg-passing registers or the stack
+(define (pass-args args)
+  (let ([num-arg-passing (vector-length arg-registers)])
+    ((lambda (f)
+       (car (foldr f '(() . 0) args)))
+     (lambda (arg acc)
+       (let ([i      (cdr acc)]
+	     [instrs (car acc)])
+	 (if (< i num-arg-passing)
+	     (cons (append instrs
+			   `((movq ,arg (reg ,(vector-ref arg-registers i)))))
+		   (add1 i))
+	     (cons (append instrs
+			   `((movq ,arg (stack-arg ,(- i num-arg-passing)))))
+		   (add1 i))))))))
+
+;; (pass-args '(foo goo bar gar gnar lar 'zar 'car 'par))
