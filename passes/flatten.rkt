@@ -158,7 +158,7 @@
 	    [defs^ (map flatten-define defs)])
 	`(program ,vars
                   ,t
-		  (defines ,defs^)
+		  (defines ,@defs^)
                   ,@(append rhs `((return ,ex))))
         ))]))
 

@@ -22,11 +22,12 @@
      [(? boolean?) exprs]
 
      [`(define (,f ,vars ...) : ,rt ,expr)
-      (let* ([fname^ (append (map (lambda (v)
-				    (match v
-					   [`(,var : (,t1 -> ,t2)) var]
-					   [_ (void)])) vars) fname)]
-	     [expr^ (reveal-functions^ expr fname^)])
+      (let* (
+	     ;; [fname^ (append (map (lambda (v)
+	     ;; 			    (match v
+	     ;; 				   [`(,var : (,t1 -> ,t2)) var]
+	     ;; 				   [_ (void)])) vars) fname)]
+	     [expr^ (reveal-functions^ expr fname)])
 	`(define (,f ,@vars) : ,rt ,expr^))]
 
      [`(let ([,lhs ,rhs]) ,body)

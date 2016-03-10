@@ -28,55 +28,18 @@
 
 (define (expose-allocation p)
   (match p
-   [`(program ,vars ,t ,defines ,stmts ...)
-    (let* ([types (uncover-types p)]
-           [stmts^ (foldr
-                    (lambda (stmt acc)
-                     (match stmt
-                      [`(assign ,var (vector ,es ...))
-                       (let* ([vsets (vector-setting var es)]
-                              [bytes (+ 8 (* 8 (cdr vsets)))])
-                         (append `((if (collection-needed? ,bytes)
-                                       ((collect ,bytes))
-                                       ())
-                                   (assign ,var
-                                           (allocate ,(length es)
-                                                     ,(lookup var types)))
-                                   ,@(car vsets))
-                                 acc))]
-
-                      [`,_ (append `(,stmt) acc)]))
-                    '()
-                    stmts)]
-
-           [defs (match defines
-	          [`(defines ,defs^) defs^])]
-
-           [defines^
-	     (map
-	      (lambda (def)
-		(match def
-                 [`(define (,f ,vars ...) : ,rt ,tmpVar ,exprs)
-		  (append `(define (,f ,@vars) : ,rt ,tmpVar)
-			  (foldr
-			   (lambda (stmt acc)
-			     (match stmt
-                              [`(assign ,var (vector ,es ...))
-			       (let* ([vsets (vector-setting var es)]
-				      [bytes (+ 8 (* 8 (cdr vsets)))])
-				 (append `((if (collection-needed? ,bytes)
-					       ((collect ,bytes))
-					       ())
-					   (assign ,var
-						   (allocate
-						    ,(length es)
-						    ,(lookup var types)))
-					   ,@(car vsets))
-					 acc))]
-			      [`,_ (append `(,stmt) acc)]))
-			   '()
-			   exprs))]))
-	      defs)])
+   [`(program ,vars ,t (defines ,defs ...) ,stmts ...)
+    (let* ([all-types (uncover-types p)]
+	   [define-types (cadr all-types)]
+           [stmts^ (stmts->allocation stmts (last all-types))]
+           [defines^ (map (lambda (def types)
+			    (match def
+  			     [`(define (,f ,vars ...) : ,rt ,tmpVar ,exprs ...)
+			      `(define (,f ,@vars)
+				 :,rt ,tmpVar
+				 ,@(stmts->allocation exprs types))
+			      ]))
+			  defs define-types)])
       (void-vec-sets
         `(program ,vars
                   ,t
@@ -91,7 +54,25 @@
     (let ([tmp (gensym "void.")])
       (cons (append (car acc)
                     `((assign ,tmp (vector-set! ,var ,(cdr acc) ,e))))
-          (+ 1 (cdr acc)))))))
+	    (+ 1 (cdr acc)))))))
+
+(define (stmts->allocation stmts types)
+  ((lambda (f)
+     (foldr f '() stmts))
+   (lambda (stmt acc)
+     (match stmt
+      [`(assign ,var (vector ,es ...))
+       (let* ([vsets (vector-setting var es)]
+	      [bytes (+ 8 (* 8 (cdr vsets)))])
+	 (append `((if (collection-needed? ,bytes)
+		       ((collect ,bytes))
+		       ())
+		   (assign ,var
+			   (allocate ,(length es)
+				     ,(lookup var types)))
+		   ,@(car vsets))
+		 acc))]
+      [`,_ (append `(,stmt) acc)]))))
 
 ;; THIS IS A BANDAID
 ;; take program and turns vector-sets! into assign... as well as adds them to
