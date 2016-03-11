@@ -25,7 +25,7 @@
 						  (get-vars stmts^ '())))]
 	   [max-stack  (let ([ms (- num-args
 				    (vector-length arg-registers))])
-			 (if (< ms 0) 0 ms))])
+			 (+ 1 (if (< ms 0) 0 ms)))])
       `(define (,f)
 	 ,num-locals
 	 (,(append `(,rs) args^ gen-vars^) ,max-stack)
@@ -255,7 +255,7 @@
 			 `((movq ,arg (reg ,(vector-ref arg-registers i)))))
 		 (add1 i))
 	   (cons (append instrs
-			 `((movq ,arg (stack-arg ,(- i num-arg-passing)))))
+			 `((movq ,arg (stack-arg ,(* 8 (- i num-arg-passing))))))
 		 (add1 i)))))))
 
 
@@ -275,7 +275,7 @@
 				 (var ,v))))
 		 (add1 i))
 	   (cons (append instrs
-			 `((movq (stack-arg ,(- i num-arg-passing))
+			 `((movq (stack-arg ,(* 8 (- i num-arg-passing)))
 				 (var ,v))))
 		 (add1 i)))))))
 
