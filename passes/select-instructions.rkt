@@ -1,5 +1,6 @@
 #lang racket
 (require "../utilities.rkt")
+(require racket/pretty)
 (provide select-instructions)
 
 ;;
@@ -14,18 +15,38 @@
   (match e
    ['() '()]
 
+   [`(define (,f ,args ...) : ,rt ,gen-vars ,stmts ...)
+    (let* ([num-args   (length args)]
+	   [args^      (map car args)]
+	   [num-locals (+ num-args 1)] ;; plus 1 for the rootstack?
+	   [stmts^     (append-map (lambda (s)
+				     (select-instructions^ s rs)) stmts)]
+	   [gen-vars^  (remove-duplicates (append gen-vars
+						  (get-vars stmts^ '())))]
+	   [max-stack  (let ([ms (- num-args
+				    (vector-length arg-registers))])
+			 (if (< ms 0) 0 ms))])
+      `(define (,f)
+	 ,num-locals
+	 (,(append `(,rs) args^ gen-vars^) ,max-stack)
+	 ,@(append (move-locals (append args^ `(,rs)))  stmts^)))]
+
    [(? boolean?) (if e `(int 1) `(int 0))]
 
    [(? integer?) `(int ,e)]
 
    [(? symbol?) `(var ,e)]
 
+   ;; >>>>>>>>>>>>>>        FOR FUNCTIONS APPLICATION      <<<<<<<<<<<<<<<<<<<<<
    [`(assign ,v (function-ref ,f))
-    `((leaq (function-ref ,f) ,v))]
+    `((leaq (function-ref ,f) ,(select-instructions^ v rs)))]
 
    [`(assign ,v (app ,funk ,args ...))
-    `((indirect-callq ,funk)
-      (movq (reg rax) ,v))]
+    `(,@(pass-args (map (lambda (a) (select-instructions^ a rs))
+			(append args `(,rs))))
+      (indirect-callq ,(select-instructions^ funk rs))
+      (movq (reg rax) ,(select-instructions^ v rs)))]
+   ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
    [`(assign ,v (read))
     `((callq read_int)
@@ -129,6 +150,8 @@
 
    ))
 
+
+
 ;; MAIN selection instructions
 (define (select-instructions e)
  (match e
@@ -136,28 +159,12 @@
    (let* ([rs     (gensym "rootstack.")]
 	  [stmts^ (append-map (lambda (s)
 				(select-instructions^ s rs)) stmts)]
-	  [defs^  (map select-instructions defs)])
+	  [defs^  (map (lambda (s)
+			 (select-instructions^ s rs)) defs)])
      `(program ,(remove-duplicates (append vs (get-vars stmts^ '())))
 	       ,type
 	       (defines ,@defs^)
-	       ,@stmts^))]
-
-  [`(define (,f ,args ...) : ,rt ,gen-vars ,stmts ...)
-   (let* ([rs        (gensym "rootstack.")]
-	  [num-args  (length args)]
-	  [stmts^    (append-map (lambda (s)
-				  (select-instructions^ s rs)) stmts)]
-	  [args      (remove-duplicates (append gen-vars
-						(get-vars stmts^ '())))]
-	  [max-stack (let ([ms (- num-args
-				  (vector-length arg-registers))])
-		       (if (< ms 0) 0 ms))])
-     `(define (,f)
-	,(+ num-args (length gen-vars))
-	(,args ,max-stack)
-	,@stmts^))]))
-
-
+	       ,@stmts^))]))
 
 
 
@@ -171,6 +178,8 @@
 		  (+ 1 (cdr acc))))
 	  '(() . 1)
 	  vars)))
+
+
 
 (define (pop-live-roots vars rootstack)
   (car
@@ -196,7 +205,10 @@
      [`(if ,cnd ,thn ,els) (append (get-vars cnd '())
 			           (get-vars thn '())
                                    (get-vars els '()))]
-     [else '()])))
+     [else '()]
+     )))
+
+
 
 (define get-vars
   (lambda (instrs ans)
@@ -205,6 +217,8 @@
         (get-vars (cdr instrs)
 		  (append ans
 			  (get-vars-helper (car instrs)))))))
+
+
 
 ;; returns the 50 bit pointer mask given a vectors types
 (define (pointer-mask types)
@@ -220,21 +234,49 @@
 		       mask)
 	 . ,(+ 1 n))))))
 
+
+
+;; This returns the number argument passing registers for the following
+;;  helper functions
+(define num-arg-passing (vector-length arg-registers))
+
+
+
 ;; takes a list of args to be passed to a function and returns a list of
 ;;  instrucions putting them in the arg-passing registers or the stack
 (define (pass-args args)
-  (let ([num-arg-passing (vector-length arg-registers)])
-    ((lambda (f)
-       (car (foldr f '(() . 0) args)))
-     (lambda (arg acc)
-       (let ([i      (cdr acc)]
-	     [instrs (car acc)])
-	 (if (< i num-arg-passing)
-	     (cons (append instrs
-			   `((movq ,arg (reg ,(vector-ref arg-registers i)))))
-		   (add1 i))
-	     (cons (append instrs
-			   `((movq ,arg (stack-arg ,(- i num-arg-passing)))))
-		   (add1 i))))))))
+  ((lambda (f)
+     (car (foldr f '(() . 0) args)))
+   (lambda (arg acc)
+     (let ([i      (cdr acc)]
+	   [instrs (car acc)])
+       (if (< i num-arg-passing)
+	   (cons (append instrs
+			 `((movq ,arg (reg ,(vector-ref arg-registers i)))))
+		 (add1 i))
+	   (cons (append instrs
+			 `((movq ,arg (stack-arg ,(- i num-arg-passing)))))
+		 (add1 i)))))))
 
-;; (pass-args '(foo goo bar gar gnar lar 'zar 'car 'par))
+
+
+
+;; Returns list of instrs moving locals passed parameters to local vars in
+;;   function
+(define (move-locals vars)
+  ((lambda (f)
+     (car (foldr f '(() . 0) vars)))
+   (lambda (v acc)
+     (let ([i      (cdr acc)]
+	   [instrs (car acc)])
+       (if (< i num-arg-passing)
+	   (cons (append instrs
+			 `((movq (reg ,(vector-ref arg-registers i))
+				 (var ,v))))
+		 (add1 i))
+	   (cons (append instrs
+			 `((movq (stack-arg ,(- i num-arg-passing))
+				 (var ,v))))
+		 (add1 i)))))))
+
+;; (pretty-print (move-locals 15))
