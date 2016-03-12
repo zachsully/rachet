@@ -1,4 +1,5 @@
 #lang racket
+(require racket/pretty)
 (provide uncover-live)
 
 ;;
@@ -12,10 +13,19 @@
 
 (define (uncover-live e)
   (match e
-   [`(program (,vs ...) ,t ,instrs ...)
-    `(program (,vs ,(recieves (reverse instrs) (set ) (set ) '()))
-	      ,t
-	      ,@instrs)]))
+   [`(program ,vs ,type (defines ,defs ...) ,instrs ...)
+    `(program (,vs
+	       ,(liveness-analysis (reverse instrs) (set ) (set ) '()))
+	      ,type
+	      (defines ,(map uncover-live defs))
+	      ,@instrs)]
+
+   [`(define (,f) ,num-locals (,vars ,max-stack) ,locals ,instrs ...)
+    `(define (,f)
+       ,num-locals
+       (,vars ,max-stack)
+       (,locals ,(liveness-analysis (reverse instrs) (set ) (set ) '()))
+       ,@instrs)]))
 
 ;; a variable is live from when it was assigned to when it was used
 ;; The accummulator is structured like this
@@ -36,7 +46,7 @@
     (member op read2-write-list)))
 
 (define read-write-list
-    `(movq movzbq))
+    `(movq movzbq leaq))
 
 (define read-write?
   (lambda (op)
@@ -50,7 +60,7 @@
     (member op unary-list)))
 
 (define conflict-all-list
-  `(callq))
+  `(callq indirect-callq))
 
 (define conflict-all?
   (lambda (op)
@@ -66,19 +76,19 @@
            [else (set )])))
 
 ;; live-before = (union (set-subract live-after  writes) reads)
-(define recieves
+(define liveness-analysis
   (lambda (instrs live-after live-before uncover)
     (if (null? instrs)
-      uncover
-      (let-values ([(instr before-set after-set)
-                    (recieves-helper (car instrs) live-before)])
-                  (recieves (cdr instrs) after-set before-set
-                            (append `((,instr ,before-set ,after-set))
-				    uncover))))))
+	uncover
+	(let-values ([(instr before-set after-set)
+		      (liveness-analysis-helper (car instrs) live-before)])
+	  (liveness-analysis (cdr instrs) after-set before-set
+			     (append `((,instr ,before-set ,after-set))
+				     uncover))))))
 
 
 
-(define recieves-helper
+(define liveness-analysis-helper
   (lambda (instr after-set)
     (match instr
      [`(,op (offset ,src ,i) (offset ,dst ,j))
@@ -141,8 +151,8 @@
               after-set)]
 
      [`(if (eq? (int 1) ,cnd) ,thn ,els)
-      (let ([thn^ (recieves (reverse thn) (set ) after-set '())]
-            [els^ (recieves (reverse els) (set ) after-set '())])
+      (let ([thn^ (liveness-analysis (reverse thn) (set ) after-set '())]
+            [els^ (liveness-analysis (reverse els) (set ) after-set '())])
         (values `(if (eq? (int 1) ,cnd)
 		     ,thn^
 		     ,els^)
@@ -150,8 +160,8 @@
                 (set-union (caddar thn^) (caddar els^) after-set)))]
 
      [`(if (eq? (int 0) ,cnd) ,thn ,els)
-      (let ([thn^ (recieves (reverse thn) (set ) after-set '())]
-	    [els^ (recieves (reverse els) (set ) after-set '())])
+      (let ([thn^ (liveness-analysis (reverse thn) (set ) after-set '())]
+	    [els^ (liveness-analysis (reverse els) (set ) after-set '())])
         (values `(if (eq? (int 0) ,cnd)
 		     ,thn^
 		     ,els^)

@@ -1,4 +1,5 @@
 #lang racket
+(require racket/pretty)
 (provide uncover-call-live-roots)
 
 (define (uncover-call-live-roots p)
@@ -8,11 +9,11 @@
 	  [defs^       (map uncover-call-live-roots defs)])
       `(program ,vars
                 ,t
-		(defines ,@defs)
+		(defines ,@defs^)
                 ,@(apply-live-roots root-afters)))]
    [`(define (,f ,vars ...) : ,rt ,gen-vars ,stmts ...)
     (let ([root-afters (live-after-roots stmts)])
-      `(define (,f ,vars ...)
+      `(define (,f ,@vars)
 	 : ,rt
 	 ,gen-vars
 	 ,@(apply-live-roots root-afters)))]))

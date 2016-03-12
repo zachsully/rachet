@@ -15,27 +15,12 @@
   (match e
    ['() '()]
 
-   [`(define (,f ,args ...) : ,rt ,gen-vars ,stmts ...)
-    (let* ([num-args   (length args)]
-	   [args^      (map car args)]
-	   [num-locals (+ num-args 1)] ;; plus 1 for the rootstack?
-	   [stmts^     (append-map (lambda (s)
-				     (select-instructions^ s rs)) stmts)]
-	   [gen-vars^  (remove-duplicates (append gen-vars
-						  (get-vars stmts^ '())))]
-	   [max-stack  (let ([ms (- num-args
-				    (vector-length arg-registers))])
-			 (+ 1 (if (< ms 0) 0 ms)))])
-      `(define (,f)
-	 ,num-locals
-	 (,(append `(,rs) args^ gen-vars^) ,max-stack)
-	 ,@(append (move-locals (append args^ `(,rs)))  stmts^)))]
-
    [(? boolean?) (if e `(int 1) `(int 0))]
 
    [(? integer?) `(int ,e)]
 
    [(? symbol?) `(var ,e)]
+
 
    ;; >>>>>>>>>>>>>>        FOR FUNCTIONS APPLICATION      <<<<<<<<<<<<<<<<<<<<<
    [`(assign ,v (function-ref ,f))
@@ -113,6 +98,12 @@
    [`(return ,v)
     `((movq ,(select-instructions^ v rs) (reg rax)))]
 
+   [`(initialize ,rootlen ,heaplen)
+    `((movq (int ,rootlen) (reg rdi))
+      (movq (int ,heaplen) (reg rsi))
+      (callq initialize)
+      (movq (global-value rootstack_begin) (var ,rs)))]
+
    ;; Checks if there is enough space in the from space
    [`(if (collection-needed? ,bytes) ,thn ,els)
     (let ([end-data (gensym "end-data.")]
@@ -123,8 +114,8 @@
 	(setl (byte-reg al))
 	(movzbq (byte-reg al) (var ,lt))
 	(if (eq? (int 0) (var ,lt))
-	    ,(select-instructions^ els rs)
-	    ,(select-instructions^ thn rs))))]
+	    ,(select-instructions^ thn rs)
+	    ,(select-instructions^ els rs))))]
 
    [`(call-live-roots ,vs (collect ,bytes))
     (append
@@ -137,17 +128,26 @@
 	 (callq collect)))
      (pop-live-roots vs rs))]
 
-   [`(initialize ,rootlen ,heaplen)
-    `((movq (int ,rootlen) (reg rdi))
-      (movq (int ,heaplen) (reg rsi))
-      (callq initialize)
-      (movq (global-value rootstack_begin) (var ,rs)))]
+   [`(define (,f ,args ...) : ,rt ,gen-vars ,stmts ...)
+    (let* ([num-args   (length args)]
+	   [args^      (map car args)]
+	   [num-locals (+ num-args 1)] ;; plus 1 for the rootstack?
+	   [stmts^     (append-map (lambda (s)
+				     (select-instructions^ s rs)) stmts)]
+	   [gen-vars^  (remove-duplicates (append gen-vars
+						  (get-vars stmts^ '())))]
+	   [max-stack  (let ([ms (- num-args
+				    (vector-length arg-registers))])
+			 (+ 1 (if (< ms 0) 0 ms)))])
+      `(define (,f)
+	 ,num-locals
+	 (,(append `(,rs) args^ gen-vars^) ,max-stack)
+	 ,@(append (move-locals (append args^ `(,rs)))  stmts^)))]
 
    ;; For recuring on body of the list
    [`(,x ...) (let ([ex_stmts (select-instructions^ (car x) rs)]
                     [ex1_stmts (select-instructions^ (cdr x) rs)])
-        (append ex_stmts ex1_stmts))]
-
+		(append ex_stmts ex1_stmts))]
    ))
 
 
