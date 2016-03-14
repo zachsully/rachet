@@ -6,10 +6,18 @@
 (define lower-conditionals
   (lambda (e)
     (match e
-     [`(program ,v ,t ,es ...)
-      `(program ,v ,t ,@(foldr (lambda (e^ acc) (append (get-low e^) acc))
-			       '()
-			       es))])))
+     [`(program ,extra ,t (defines ,defs ...) ,es ...)
+      `(program ,extra
+		,t
+		;; (defines ,@(map lower-conditionals defs))
+		,@(append-map get-low es))]
+
+     [`(define (,f) ,num-locals (,vars ,max-stack) ,locals ,instrs ...)
+      `(define (,f)
+	 ,num-locals
+	 (,vars ,max-stack)
+	 ,locals
+	 ,@(append-map get-low instrs))])))
 
 (define (get-low e)
   (match e
@@ -25,10 +33,3 @@
         ,@thn
         (label ,end-label)))]
    [else `(,e)]))
-
-
-;; (lower-conditionals
-;;  `(program (stuff)
-;;    (if (eq? (int 1) (int 1))
-;;        ((movq (int 42) (reg rbx)))
-;;        ((movq (int 0) (reg rbx))))))

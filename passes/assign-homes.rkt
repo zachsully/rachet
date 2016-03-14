@@ -16,7 +16,10 @@
    [`(program (,vars ,reg-map) ,t (defines ,defs ...) ,instrs ...)
     (begin
       (color->reg reg-map)
-      `(program (,vars ,reg-map) ,t ,@(assign-reg instrs reg-map)))]))
+      `(program (,vars)
+		,t
+		(defines ,@defs)
+		,@(assign-reg instrs reg-map)))]))
 
 
 (define (assign-reg instrs reg-map)

@@ -10,13 +10,10 @@
 ;; righthand-side
 ;;
 
-(define patch-instructions
-  (lambda (e)
-    (match e
-     [`(program ,v ,t ,es ...)
-      `(program ,v ,t ,@(foldr (lambda (e^ acc) (append (patch e^) acc))
-			       '()
-			       es))])))
+(define (patch-instructions p)
+ (match p
+  [`(program ,v ,t ,instrs ...)
+   `(program ,v ,t ,@(append-map patch instrs))]))
 
 (define (patch e)
   (match e
