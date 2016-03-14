@@ -15,156 +15,95 @@
   (match e
    [`(program ,vs ,type (defines ,defs ...) ,instrs ...)
     `(program (,vs
-	       ,(liveness-analysis (reverse instrs) (set ) (set ) '()))
+	       ,(liveness-analysis instrs)
+	       ,(map uncover-live defs))
 	      ,type
-	      (defines ,(map uncover-live defs))
+	      (defines ,@defs)
 	      ,@instrs)]
 
    [`(define (,f) ,num-locals (,vars ,max-stack) ,locals ,instrs ...)
-    `(define (,f)
-       ,num-locals
-       (,vars ,max-stack)
-       (,locals ,(liveness-analysis (reverse instrs) (set ) (set ) '()))
-       ,@instrs)]))
+    (liveness-analysis instrs)]))
 
-;; a variable is live from when it was assigned to when it was used
-;; The accummulator is structured like this
-;; `(,instru ,live-before ,live-after)
 
-(define only-reads-list
-  `(cmpq))
 
-(define only-reads?
-  (lambda (op)
-    (member op only-reads-list)))
-
-(define read2-write-list
-  '(subq addq xorq))
-
-(define read2-write?
-  (lambda (op)
-    (member op read2-write-list)))
-
-(define read-write-list
-    `(movq movzbq leaq))
-
-(define read-write?
-  (lambda (op)
-  (member op read-write-list)))
-
-(define unary-list
-  '(negq sete setl))
-
-(define unary?
-  (lambda (op)
-    (member op unary-list)))
-
-(define conflict-all-list
-  `(callq indirect-callq))
-
-(define conflict-all?
-  (lambda (op)
-    (member op conflict-all-list)))
-
-(define binary-live
+(define live-set
   (lambda (src)
     (match src
            [`(var ,x) (set x)]
            [`(byte-reg ,x) (set 'rax)]
            [`(reg ,x) (set x)]
-	   [`(offset ,loc ,_) (binary-live loc)]
-           [else (set )])))
-
-;; live-before = (union (set-subract live-after  writes) reads)
-(define liveness-analysis
-  (lambda (instrs live-after live-before uncover)
-    (if (null? instrs)
-	uncover
-	(let-values ([(instr before-set after-set)
-		      (liveness-analysis-helper (car instrs) live-before)])
-	  (liveness-analysis (cdr instrs) after-set before-set
-			     (append `((,instr ,before-set ,after-set))
-				     uncover))))))
+	   [`(offset ,loc ,_) (live-set loc)]
+           [else (set)])))
 
 
 
-(define liveness-analysis-helper
-  (lambda (instr after-set)
-    (match instr
-     [`(,op (offset ,src ,i) (offset ,dst ,j))
-      #:when (member op '(addq movq subq))
-      (let ([src^ (binary-live src)]
-            [dst^ (binary-live dst)])
-        (values instr
-                (set-union after-set src^ dst^)
-                after-set))]
+(define (liveness-analysis instrs)
+  ((lambda (f)
+     (remove-last (foldr f `((() . ,(set))) instrs)))
+   (lambda (instr liveness)
+     (let ([live (cdar liveness)])
+       (match instr
+        [`(,op ,src ,dst)
+	 #:when (and (member op '(movq movzbq xorq))
+		     (or (equal? (car src) 'offset)
+			 (equal? (car dst) 'offset)))
+	 (let ([instr-liveness
+		`(,instr . ,(set-union live (live-set dst) (live-set src)))])
+	   (cons instr-liveness liveness))]
 
-     [`(,op (offset ,src ,i) ,dst)
-      #:when (member op '(addq movq subq))
-      (let ([src^ (binary-live src)]
-            [dst^ (binary-live dst)])
-        (values instr
-                (set-union after-set src^ dst^)
-                after-set))]
+	[`(,op ,src ,dst) #:when (member op '(movq movzbq xorq))
+	 (let ([instr-liveness
+		`(,instr . ,(set-union (set-subtract live (live-set dst))
+				       (live-set src)))])
+	   (cons instr-liveness liveness))]
 
-     [`(,op ,src (offset ,dst ,j))
-      #:when (member op '(addq movq subq))
-      (let ([src^ (binary-live src)]
-            [dst^ (binary-live dst)])
-        (values instr
-                (set-union after-set src^ dst^)
-                after-set))]
+	[`(addq ,src ,dst)
+	 (let ([instr-liveness
+		`(,instr . ,(set-union live
+				       (live-set src)
+				       (live-set dst)))])
+	   (cons instr-liveness liveness))]
 
-     [`(,op ,src ,des) #:when (read2-write? op)
-      (let ([src^ (binary-live src)]
-            [des^ (binary-live des)])
-        (values instr
-                (set-union (set-subtract after-set des^) src^ des^)
-                after-set))]
+	[`(leaq ,func-ref ,dst)
+	 (let ([instr-liveness
+		`(,instr . ,(set-subtract live (live-set dst)))])
+	   (cons instr-liveness liveness))]
 
-     [`(,op ,src ,des) #:when (read-write? op)
-      (let ([src^ (binary-live src)]
-            [des^ (binary-live des)])
-        (values instr
-                (set-union (set-subtract after-set des^) src^)
-                after-set))]
+	[`(if (eq? ,a ,b) ,thn ,els)
+	 (let* ([thn^   (liveness-analysis thn)]
+		[lb-thn (if (null? thn^) (set) (cdar thn^))]
+		[els^   (liveness-analysis els)]
+		[lb-els (if (null? els^) (set) (cdar els^))]
+		[instr-liveness
+		 `((if (eq? ,a ,b)
+		       ,thn^
+		       ,els^)
+		   . ,(set-union lb-thn
+				 lb-els
+				 (live-set a)
+				 (live-set b)))])
+	   (cons instr-liveness liveness))]
 
-     [`(,op ,src) #:when (unary? op)
-      (let ([src^ (binary-live src)])
-        (values instr
-                (set-union (set-subtract after-set src^) src^)
-                after-set))]
+	[`(,op ,arg) #:when (member op '(setl sete))
+	 (let ([instr-liveness `(,instr . ,live)])
+	   (cons instr-liveness liveness))]
 
-     [`(,op ,src ,dst) #:when (only-reads? op)
-      (let ([src^ (binary-live src)]
-            [dst^ (binary-live dst)])
-        (values instr
-                (set-union after-set src^ dst^)
-                after-set))]
+	[`(negq ,arg)
+	 (let ([instr-liveness `(,instr . ,(set-union live (live-set arg)))])
+	   (cons instr-liveness liveness))]
 
+	[`(,op ,arg) #:when (member op '(callq indirect-callq))
+	 (let ([instr-liveness `(,instr . ,(set-subtract live (set 'rax)))])
+	   (cons instr-liveness liveness))]
 
-     [`(,op ,src) #:when (conflict-all? op)
-      (values instr
-              (set-union
-               (set-subtract after-set (set 'rax))
-               (set 'rax))
-              after-set)]
+	[`(,op ,a ,b) #:when (member op '(cmpq))
+	 (let ([instr-liveness `(,instr . ,(set-union live
+						      (live-set a)
+						      (live-set b)))])
+	   (cons instr-liveness liveness))]
+	)))))
 
-     [`(if (eq? (int 1) ,cnd) ,thn ,els)
-      (let ([thn^ (liveness-analysis (reverse thn) (set ) after-set '())]
-            [els^ (liveness-analysis (reverse els) (set ) after-set '())])
-        (values `(if (eq? (int 1) ,cnd)
-		     ,thn^
-		     ,els^)
-                (set-union (cadar thn^) (cadar els^) (binary-live cnd))
-                (set-union (caddar thn^) (caddar els^) after-set)))]
-
-     [`(if (eq? (int 0) ,cnd) ,thn ,els)
-      (let ([thn^ (liveness-analysis (reverse thn) (set ) after-set '())]
-	    [els^ (liveness-analysis (reverse els) (set ) after-set '())])
-        (values `(if (eq? (int 0) ,cnd)
-		     ,thn^
-		     ,els^)
-                (set-union (set ) (cadar els^) (binary-live cnd))
-                (set-union (set ) (caddar els^) after-set)))]
-     )))
+(define (remove-last ls)
+  (cond
+   [(null? ls) ls]
+   [else (reverse (cdr (reverse ls)))]))

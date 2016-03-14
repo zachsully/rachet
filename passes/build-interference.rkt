@@ -5,20 +5,31 @@
 (define build-interference
   (lambda (e)
     (match e
-      [`(program (,vs ,uncover) ,t ,instrs ...)
-       (let ([graph (make-graph vs)])
-            (build-graph graph uncover)
-         `(program (,vs ,graph) ,t ,@instrs))])))
+     [`(program (,vs ,live-data ,def-live-data)
+		,t
+		(defines ,defs ...)
+		,instrs ...)
+      (let ([graph
+	     (make-graph
+	      (append vs (append-map (lambda (d) (caar (cdddr d))) defs)))])
+	(build-graph graph live-data)
+	(map (lambda (ld) (build-graph graph ld)) def-live-data)
+	`(program (,vs ,graph) ,t (defines ,@defs) ,@instrs))])))
 
-(define build-graph
-  (lambda (graph uncover)
-    (for ([line uncover])
-      (let ([instr (car line)]
-            [after-set (caddr line)])
-        (match instr
+
+(define (build-graph graph live-data)
+  ((lambda (f)
+     (map f live-data))
+   (lambda (data)
+     (let ([instr     (car data)]
+	   [after-set (cdr data)])
+       (match instr
+	 [`(,_ ,_ (stack-arg ,_)) (void)]
+	 [`(,_ (stack-arg ,_) ,_) (void)]
 
 	 ;; free ptr is manage by c runtime
-	 [`(movq (global-value free_ptr) (,_ ,dst))
+	 [`(movq (global-value free_ptr) (,loc ,dst))
+	  #:when (not (eq? loc 'stack-arg))
 	  (set-map (set-subtract after-set (set dst))
 		   (lambda (live-after)
 		     (add-edge graph dst live-after)))]
@@ -31,16 +42,11 @@
 		   (lambda (live-after)
 		     (add-edge graph dst live-after)))]
 
-	 [`(movq (,_ ,src) (,_ ,dst))
+	 [`(,op (,_ ,src) (,_ ,dst))
+	  #:when (member op '(movq movzbq))
 	  (set-map (set-subtract after-set (set src dst))
 		   (lambda (live-after)
 		     (add-edge graph dst live-after)))]
-
-	 [`(movzbq (,_ ,src) (,_ ,dst))
-	  (set-map (set-subtract after-set (set src dst))
-		   (lambda (live-after)
-		     (add-edge graph dst live-after)))]
-
 
 	 [`(movq (offset (,_ ,src-root) ,i) (,_ ,dst))
 	  (add-edge graph dst src-root)
@@ -71,6 +77,11 @@
 		   (lambda (live-after)
 		     (add-edge graph dst live-after)))]
 
+	 [`(leaq (function-ref ,_) (,_ ,dst))
+	  (set-map (set-subtract after-set (set dst))
+		   (lambda (live-after)
+		     (add-edge graph dst live-after)))]
+
 	 [`(cmpq ,_ ,_) (void)]
 	 [`(sete ,_) (void)]
 	 [`(setl ,_) (void)]
@@ -86,7 +97,7 @@
 	    (build-graph graph thn)
 	    (build-graph graph els))]
 
-	 [`(callq ,label)
+	 [`(,op ,label) #:when (member op '(callq indirect-callq))
 	  (set-map after-set
 		   (lambda (live-after)
 		     (set-map caller-save

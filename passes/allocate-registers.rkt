@@ -16,12 +16,16 @@
 
 (define (allocate-registers e)
   (match e
-    [`(program (,vs ,inter-graph) ,t ,instrs ...)
-     (let ([sat-graph (make-sat-graph vs)]
-           [c-graph (make-color-graph vs)])
+    [`(program (,vs ,inter-graph) ,t (defines ,defs ...) ,instrs ...)
+     (let* ([total-vs (append vs
+			      (append-map (lambda (d)
+					    (caar (cdddr d))) defs))]
+	    [sat-graph (make-sat-graph total-vs)]
+           [c-graph (make-color-graph total-vs)])
        `(program (,vs
-                  ,(color-graph vs inter-graph sat-graph c-graph))
+                  ,(color-graph total-vs inter-graph sat-graph c-graph))
 		 ,t
+		 (defines ,@defs)
                  ,@instrs))]))
 
 ;; Initialize the color-graph
