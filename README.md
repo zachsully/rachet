@@ -3,9 +3,9 @@
 Zach Sullivan
 Gordon Lin
 
-### Compileable Language
+### Compile-able Language
 Our typed language handles
-* primitive arithmatic
+* primitive arithmetic
 * booleans and conditionals
 * mutateable tuples called vectors
 

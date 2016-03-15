@@ -12,34 +12,38 @@
 
 (define (print-x86 e)
   (match e
-   [`(program (,v ,x ...) ,t ,es ...)
-    (let ([size (number->string (* 8 (length v)))])
-      (let ([head (string-append "\t.globl main\nmain:\n")]
-            [init
-             (string-append
-              "\tpushq\t%rbp\n\tmovq\t%rsp,\t%rbp\n"
-              (if (eq? "0" size)
-                  "" (string-append "\tsubq\t$" size ",\t%rsp\n"))
-              (foldl string-append ""
-                     (map (lambda (r)
-                            (string-append
-                             "\tpushq\t"
-                             (string-append "%" (symbol->string r))
-                             "\n")) (set->list caller-save))))]
-            [shutdown
-             (string-append
-              "\tmovq\t%rax,\t%rdi\n\tcallq\tprint_int\n\tmovq\t$0,\t%rax\n"
-              (foldl string-append ""
-                     (map (lambda (r)
-                            (string-append
-                             "\tpopq\t"
-                             (string-append "%" (symbol->string r))
-                             "\n")) (set->list caller-save)))
-              (if (eq? "0" size)
-                  "" (string-append "\taddq\t$" size ",\t%rsp\n"))
-              "\tpopq\t%rbp\n\tretq\n")]
-            [prog (foldr string-append "" (map print-x86^ es))])
-        (string-append head init prog shutdown)))]))
+   [`(program ,extra ,t (defines ,defs ...) ,es ...)
+    (let* ([vars (car extra)]
+	   [size (number->string (* 8 (length vars)))]
+	   [head (string-append "\t.globl main\nmain:\n")]
+	   [init (string-append "\tpushq\t%rbp\n\tmovq\t%rsp,\t%rbp\n"
+				(if (eq? "0" size)
+				    ""
+				    (string-append "\tsubq\t$"
+						   size
+						   ",\t%rsp\n"))
+				(foldl string-append ""
+				       (map (lambda (r)
+					      (string-append
+					       "\tpushq\t"
+					       (string-append "%"
+							      (symbol->string r))
+					       "\n"))
+					    (set->list caller-save))))]
+	   [shutdown (string-append
+		      "\tmovq\t%rax,\t%rdi\n\tcallq\tprint_int\n\tmovq\t$0,\t%rax\n"
+		      (foldl string-append ""
+			     (map (lambda (r)
+				    (string-append
+				     "\tpopq\t"
+				     (string-append "%" (symbol->string r))
+				     "\n"))
+				  (set->list caller-save)))
+		      (if (eq? "0" size)
+			  "" (string-append "\taddq\t$" size ",\t%rsp\n"))
+		      "\tpopq\t%rbp\n\tretq\n")]
+	   [prog (foldr string-append "" (map print-x86^ es))])
+      (string-append head init prog shutdown))]))
 
 (define (print-x86^ e)
   (match e

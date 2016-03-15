@@ -9,7 +9,7 @@
      [`(program ,extra ,t (defines ,defs ...) ,es ...)
       `(program ,extra
 		,t
-		;; (defines ,@(map lower-conditionals defs))
+		(defines ,@(map lower-conditionals defs))
 		,@(append-map get-low es))]
 
      [`(define (,f) ,num-locals (,vars ,max-stack) ,locals ,instrs ...)

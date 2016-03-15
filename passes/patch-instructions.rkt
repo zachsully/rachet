@@ -12,8 +12,18 @@
 
 (define (patch-instructions p)
  (match p
-  [`(program ,v ,t ,instrs ...)
-   `(program ,v ,t ,@(append-map patch instrs))]))
+  [`(program ,extra ,t (defines ,defs ...) ,instrs ...)
+   `(program ,extra
+	     ,t
+	     (defines ,@(map patch-instructions defs))
+	     ,@(append-map patch instrs))]
+
+  [`(define (,f) ,num-locals (,vars ,max-stack) ,locals ,instrs ...)
+   `(define (,f)
+      ,num-locals
+      (,vars ,max-stack)
+      ,locals
+      ,@(append-map patch instrs))]))
 
 (define (patch e)
   (match e
