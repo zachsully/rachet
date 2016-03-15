@@ -81,7 +81,13 @@
           [els^ (assign-reg els reg-map)])
       `(if (eq? ,t ,cnd^) ,thn^ ,els^))]
 
-   [`(callq ,x) `(callq ,x)]))
+   [`(callq ,x) `(callq ,x)]
+
+   [`(indirect-callq (var ,x))
+    `(indirect-callq ,(hash-ref reg-map x))]
+
+   [`(leaq ,_ ,_) instr]
+   ))
 
 
 

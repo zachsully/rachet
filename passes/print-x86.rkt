@@ -10,8 +10,8 @@
 ;; Takes our most reduced AST of x86' and outputs a string of x86
 ;;
 
-(define (print-x86 e)
-  (match e
+(define (print-x86 p)
+  (match p
    [`(program ,extra ,t (defines ,defs ...) ,es ...)
     (let* ([vars (car extra)]
 	   [size (number->string (* 8 (length vars)))]
@@ -45,11 +45,11 @@
 	   [prog (foldr string-append "" (map print-x86^ es))])
       (string-append head init prog shutdown))]))
 
-(define (print-x86^ e)
-  (match e
+(define (print-x86^ instr)
+  (match instr
    [`(offset ,loc ,i)
     (string-append (number->string i) "(" (print-x86^ loc) ")")]
-   [`(,op ,a ,b) #:when (member op '(movq addq cmpq movzbq xorq))
+   [`(,op ,a ,b) #:when (member op '(movq addq cmpq movzbq xorq leaq))
     (string-append
      "\t" (symbol->string op) "\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
    [`(,op ,q) #:when (member op '(negq sete setl))
@@ -71,4 +71,10 @@
    [`(pushq ,v)
     (string-append "\tpushq\t" (print-x86^ v) "\n")]
    [`(popq ,v)
-    (string-append "\tpopq\t" (print-x86^ v) "\n")]))
+    (string-append "\tpopq\t" (print-x86^ v) "\n")]
+   [`(function-ref ,label)
+    (string-append (symbol->string label) "%(rip)")]
+   [`(indirect-callq ,q)
+    (string-append "\tcallq\t*" (print-x86^ q) "\n")]
+   [`(stack-arg ,i)
+    (string-append (number->string i) "%(rsp)")]))

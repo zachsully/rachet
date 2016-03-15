@@ -29,9 +29,9 @@
                     ("build-interference",build-interference,interp-x86)
                     ("allocate-registers",allocate-registers,interp-x86)
                     ("assign homes",assign-homes,interp-x86)
-                    ;; ("lower-conditionals",lower-conditionals,interp-x86)
-                    ;; ("patch-instructions",patch-instructions,#f)
-                    ;; ("print-x86",print-x86, #f)
+                    ("lower-conditionals",lower-conditionals,interp-x86)
+                    ("patch-instructions",patch-instructions,#f)
+                    ("print-x86",print-x86, #f)
                     ))
 
 
@@ -40,17 +40,18 @@
 ;;;;; CLASS TESTS
 ;;;;;
 
-(interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
-(interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
-(interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
-(interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
-;; (interp-tests "r4" typecheck r4-passes interp-scheme "r4" (range 1 20))
+;; (interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
+;; (interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
+;; (interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
+;; (interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
+(interp-tests "r4" typecheck r4-passes interp-scheme "r4" (range 1 20))
 
 ;; (compiler-tests "r1-passes" typecheck r4-passes "r1" (range 1 20))
 ;; (compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
 ;; (compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
 ;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 20))
+
 (newline) (display "tests passed!") (newline)
 
 ;;;;;
@@ -73,7 +74,6 @@
 ;;  `(program
 ;;    (let ([v (vector (vector 42) 21)])
 ;;      (vector-ref (vector-ref v 0) 0))
-
 ;;    )
 
 
@@ -85,13 +85,13 @@
 ;;    ,uncover-call-live-roots
 ;;    ,select-instructions
 ;;    ,uncover-live
-;;    ,build-interference
-;;    ,allocate-registers
-;;    ,assign-homes
-;;    ,lower-conditionals
-;;    ,patch-instructions
-;;    ,print-x86
-;;    ,display
-;;    ;; ,pretty-print
+;;    ;; ,build-interference
+;;    ;; ,allocate-registers
+;;    ;; ,assign-homes
+;;    ;; ,lower-conditionals
+;;    ;; ,patch-instructions
+;;    ;; ,print-x86
+;;    ;; ,display
+;;    ,pretty-print
 ;;    )
 ;; )

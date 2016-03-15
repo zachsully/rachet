@@ -36,72 +36,68 @@
            [else (set)])))
 
 
-
 (define (liveness-analysis instrs)
-  ((lambda (f)
-     (remove-last (foldr f `((() . ,(set))) instrs)))
-   (lambda (instr liveness)
-     (let ([live (cdar liveness)])
-       (match instr
-        [`(,op ,src ,dst)
-	 #:when (and (member op '(movq movzbq xorq))
-		     (or (equal? (car src) 'offset)
-			 (equal? (car dst) 'offset)))
-	 (let ([instr-liveness
-		`(,instr . ,(set-union live (live-set dst) (live-set src)))])
-	   (cons instr-liveness liveness))]
+  (remove-last (foldr liveness-analysis^ `((() . ,(set))) instrs)))
 
-	[`(,op ,src ,dst) #:when (member op '(movq movzbq xorq))
-	 (let ([instr-liveness
-		`(,instr . ,(set-union (set-subtract live (live-set dst))
-				       (live-set src)))])
-	   (cons instr-liveness liveness))]
+(define (liveness-analysis^ instr liveness)
+  (let ([live (cdar liveness)])
+    (match instr
+     [`(,op ,src ,dst) #:when (member op '(movq movzbq xorq))
+      (cond
+       ;; special case for vector-set!
+       [(equal? src `(int -1)) (cons `(,instr . ,live) liveness)]
+       ;; special case for vector-2-vector
+       [(or (equal? 'offset (car src))
+	    (equal? 'offset (car dst)))
+	(cons `(,instr . ,(set-union live (live-set dst) (live-set src)))
+	      liveness)]
+       [else
+	(cons `(,instr . ,(set-union (set-subtract live (live-set dst))
+				     (live-set src)))
+	      liveness)])]
 
-	[`(addq ,src ,dst)
-	 (let ([instr-liveness
-		`(,instr . ,(set-union live
-				       (live-set src)
-				       (live-set dst)))])
-	   (cons instr-liveness liveness))]
+     [`(addq ,src ,dst)
+      (cons `(,instr . ,(set-union live (live-set src) (live-set dst)))
+	    liveness)]
 
-	[`(leaq ,func-ref ,dst)
-	 (let ([instr-liveness
-		`(,instr . ,(set-subtract live (live-set dst)))])
-	   (cons instr-liveness liveness))]
+     [`(leaq ,func-ref ,dst)
+      (let ([instr-liveness
+	     `(,instr . ,(set-subtract live (live-set dst)))])
+	(cons instr-liveness liveness))]
 
-	[`(if (eq? ,a ,b) ,thn ,els)
-	 (let* ([thn^   (liveness-analysis thn)]
-		[lb-thn (if (null? thn^) (set) (cdar thn^))]
-		[els^   (liveness-analysis els)]
-		[lb-els (if (null? els^) (set) (cdar els^))]
-		[instr-liveness
-		 `((if (eq? ,a ,b)
-		       ,thn^
-		       ,els^)
-		   . ,(set-union lb-thn
-				 lb-els
-				 (live-set a)
-				 (live-set b)))])
-	   (cons instr-liveness liveness))]
+     [`(if (eq? ,a ,b) ,thn ,els)
+      (let* ([thn^   (remove-last
+		      (foldr liveness-analysis^ `((() . ,live)) thn))]
+	     [lb-thn (if (null? thn^) (set) (cdar thn^))]
+	     [els^   (remove-last
+		      (foldr liveness-analysis^ `((() . ,live)) els))]
+	     [lb-els (if (null? els^) (set) (cdar els^))]
+	     [instr-liveness
+	      `((if (eq? ,a ,b)
+		    ,thn^
+		    ,els^)
+		. ,(set-union lb-thn
+			      lb-els
+			      (live-set a)
+			      (live-set b)))])
+	(cons instr-liveness liveness))]
 
-	[`(,op ,arg) #:when (member op '(setl sete))
-	 (let ([instr-liveness `(,instr . ,live)])
-	   (cons instr-liveness liveness))]
+     [`(,op ,arg) #:when (member op '(setl sete negq))
+      (let ([instr-liveness `(,instr . ,(set-union (set-subtract live
+								 (live-set arg))
+						   (live-set arg)))])
+	(cons instr-liveness liveness))]
 
-	[`(negq ,arg)
-	 (let ([instr-liveness `(,instr . ,(set-union live (live-set arg)))])
-	   (cons instr-liveness liveness))]
+     [`(,op ,arg) #:when (member op '(callq indirect-callq))
+      (let ([instr-liveness `(,instr . ,(set-subtract live (set 'rax)))])
+	(cons instr-liveness liveness))]
 
-	[`(,op ,arg) #:when (member op '(callq indirect-callq))
-	 (let ([instr-liveness `(,instr . ,(set-subtract live (set 'rax)))])
-	   (cons instr-liveness liveness))]
-
-	[`(,op ,a ,b) #:when (member op '(cmpq))
-	 (let ([instr-liveness `(,instr . ,(set-union live
-						      (live-set a)
-						      (live-set b)))])
-	   (cons instr-liveness liveness))]
-	)))))
+     [`(,op ,a ,b) #:when (member op '(cmpq))
+      (let ([instr-liveness `(,instr . ,(set-union live
+						   (live-set a)
+						   (live-set b)))])
+	(cons instr-liveness liveness))]
+     )))
 
 (define (remove-last ls)
   (cond

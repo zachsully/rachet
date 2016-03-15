@@ -25,8 +25,8 @@
       ,locals
       ,@(append-map patch instrs))]))
 
-(define (patch e)
-  (match e
+(define (patch instr)
+  (match instr
    [`(,op (stack ,var1) (stack ,var2))
     `((movq (stack ,var1) (reg rax))
       (,op (reg rax) (stack ,var2)))]
@@ -102,4 +102,4 @@
       (movq (reg rax) (stack ,i)))]
    ;; >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-   [else `(,e)]))
+   [else `(,instr)]))
