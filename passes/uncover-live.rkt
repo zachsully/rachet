@@ -82,13 +82,13 @@
 			      (live-set b)))])
 	(cons instr-liveness liveness))]
 
-     [`(,op ,arg) #:when (member op '(setl sete negq))
+     [`(,op ,arg) #:when (member op '(setl sete negq indirect-callq))
       (let ([instr-liveness `(,instr . ,(set-union (set-subtract live
 								 (live-set arg))
 						   (live-set arg)))])
 	(cons instr-liveness liveness))]
 
-     [`(,op ,arg) #:when (member op '(callq indirect-callq))
+     [`(callq ,arg)
       (let ([instr-liveness `(,instr . ,(set-subtract live (set 'rax)))])
 	(cons instr-liveness liveness))]
 

@@ -40,10 +40,10 @@
 ;;;;; CLASS TESTS
 ;;;;;
 
-;; (interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
-;; (interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
-;; (interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
-;; (interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
+(interp-tests "r1" typecheck r4-passes interp-scheme "r1" (range 1 20))
+(interp-tests "r1a" typecheck r4-passes interp-scheme "r1a" (range 1 9))
+(interp-tests "r2" typecheck r4-passes interp-scheme "r2" (range 1 24))
+(interp-tests "r3" typecheck r4-passes interp-scheme "r3" (range 1 16))
 (interp-tests "r4" typecheck r4-passes interp-scheme "r4" (range 1 20))
 
 ;; (compiler-tests "r1-passes" typecheck r4-passes "r1" (range 1 20))
@@ -65,16 +65,16 @@
 			   out)) p passes)))
 
 ;; (compile-prog
-;;  ;; `(program
-;;  ;;   (define (add [x : Integer]
-;;  ;; 		[y : Integer])
-;;  ;;     : Integer (+ x y))
-;;  ;;   (add 40 2))
-
 ;;  `(program
-;;    (let ([v (vector (vector 42) 21)])
-;;      (vector-ref (vector-ref v 0) 0))
-;;    )
+;;    (define (add [x : Integer]
+;;  		[y : Integer])
+;;      : Integer (+ x y))
+;;    (add 40 2))
+
+;;  ;; `(program
+;;  ;;   (let ([v (vector (vector 42) 21)])
+;;  ;;     (vector-ref (vector-ref v 0) 0))
+;;  ;;   )
 
 
 ;;  `(,typecheck
