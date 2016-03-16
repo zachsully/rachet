@@ -11,14 +11,21 @@
 ;; Pass takes a
 ;;
 
-(define (assign-homes e)
-  (match e
+(define (assign-homes p)
+  (match p
    [`(program (,vars ,reg-map) ,t (defines ,defs ...) ,instrs ...)
     (begin
       (color->reg reg-map)
       `(program (,vars)
 		,t
-		(defines ,@defs)
+		(defines ,@(map (lambda (d)
+				  (match d
+    				   [`(define (,f)
+				       ,num-locals (,vars ,max-stack)
+				       ,instrs ...)
+				    `(define (,f)
+				       ,num-locals (,vars ,max-stack)
+				       ,@(assign-reg instrs reg-map))])) defs))
 		,@(assign-reg instrs reg-map)))]))
 
 
@@ -35,7 +42,7 @@
        ;; [(and (equal? x^ #f) (equal? y^ #f))
        ;;  `((,op (,typex ,x)) (offset (,typey ,y) ,i))]
        [(equal? x^ #f)
-	`(,op (,typex ,x) (offset ,y^ ,i))]
+       	`(,op (,typex ,x) (offset ,y^ ,i))]
        [(equal? y^ #f) `(,op ,x^ (,typey ,y))]
        [else `(,op ,x^ (offset ,y^ ,i))]))]
 

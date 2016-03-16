@@ -12,48 +12,83 @@
 
 (define (print-x86 p)
   (match p
-   [`(program ,extra ,t (defines ,defs ...) ,es ...)
-    (let* ([vars (car extra)]
-	   [size (number->string (* 8 (length vars)))]
-	   [head (string-append "\t.globl main\nmain:\n")]
-	   [init (string-append "\tpushq\t%rbp\n\tmovq\t%rsp,\t%rbp\n"
-				(if (eq? "0" size)
-				    ""
-				    (string-append "\tsubq\t$"
-						   size
-						   ",\t%rsp\n"))
-				(foldl string-append ""
-				       (map (lambda (r)
-					      (string-append
-					       "\tpushq\t"
-					       (string-append "%"
-							      (symbol->string r))
-					       "\n"))
-					    (set->list caller-save))))]
-	   [shutdown (string-append
-		      "\tmovq\t%rax,\t%rdi\n\tcallq\tprint_int\n\tmovq\t$0,\t%rax\n"
-		      (foldl string-append ""
-			     (map (lambda (r)
-				    (string-append
-				     "\tpopq\t"
-				     (string-append "%" (symbol->string r))
-				     "\n"))
-				  (set->list caller-save)))
-		      (if (eq? "0" size)
-			  "" (string-append "\taddq\t$" size ",\t%rsp\n"))
-		      "\tpopq\t%rbp\n\tretq\n")]
-	   [prog (foldr string-append "" (map print-x86^ es))])
-      (string-append head init prog shutdown))]))
+   [`(program ,extra ,t (defines ,defs ...) ,instrs ...)
+    (string-append
+     (if (null? defs) "" (string-append* (map print-define defs)))
+     (print-main (number->string (* 8 (length (car extra)))) instrs))]))
 
-(define (print-x86^ instr)
+(define (print-main n instrs)
+  (let* ([head     (string-append "\t.globl main\nmain:\n")]
+	 [init     (string-append
+		    push-context
+		    (if (eq? "0" n) ""
+			(string-append "\tsubq\t$" n ",\t%rsp\n")))]
+	 [shutdown (string-append
+		    "\tmovq\t%rax,\t%rdi\n\tcallq\tprint_int\n"
+		    (if (eq? "0" n) ""
+			(string-append "\taddq\t$" n ",\t%rsp\n"))
+		    "\tmovq\t$0,\t%rax\n" ;; clear rax
+		    pop-context)]
+	 [prog (foldr string-append "" (map print-instr instrs))])
+    (string-append head init prog shutdown)))
+
+(define (print-define def)
+  (match def
+   [`(define (,f) ,n (,vars ,max-stack) ,locals ,instrs ...)
+    (let* ([head     (string-append "\t.globl "
+				    (symbol->string f)
+				    "\n"
+				    (symbol->string f)
+				    ":\n")]
+	   [init     (string-append
+		      push-context
+		      (if (zero? n) ""
+			  (string-append "\tsubq\t$"
+					 (number->string (* 8 n))
+					 ",\t%rsp\n")))]
+	   [shutdown (string-append
+		      (if (zero? n) ""
+			  (string-append "\taddq\t$"
+					 (number->string (* 8 n))
+					 ",\t%rsp\n"))
+		      pop-context)]
+	   [prog (foldr string-append "" (map print-instr instrs))])
+      (string-append head init prog shutdown "\n"))]))
+
+;; saves caller-save register and moves base pointer
+(define push-context
+  (string-append
+   "\tpushq\t%rbp\n\tmovq\t%rsp,\t%rbp\n"
+   (foldl string-append ""
+	  (map (lambda (r)
+		 (string-append
+		  "\tpushq\t"
+		  (string-append "%"
+				 (symbol->string r))
+		  "\n"))
+	       (set->list caller-save)))))
+
+;; returns from context returning caller-save regs and base pointer
+(define pop-context
+  (string-append
+   (foldl string-append ""
+	  (map (lambda (r)
+		 (string-append
+		  "\tpopq\t"
+		  (string-append "%" (symbol->string r))
+		  "\n"))
+	       (set->list caller-save)))
+   "\tpopq\t%rbp\n\tretq\n"))
+
+(define (print-instr instr)
   (match instr
    [`(offset ,loc ,i)
-    (string-append (number->string i) "(" (print-x86^ loc) ")")]
+    (string-append (number->string i) "(" (print-instr loc) ")")]
    [`(,op ,a ,b) #:when (member op '(movq addq cmpq movzbq xorq leaq))
     (string-append
-     "\t" (symbol->string op) "\t" (print-x86^ a) ",\t" (print-x86^ b) "\n")]
+     "\t" (symbol->string op) "\t" (print-instr a) ",\t" (print-instr b) "\n")]
    [`(,op ,q) #:when (member op '(negq sete setl))
-    (string-append "\t" (symbol->string op) "\t" (print-x86^ q) "\n")]
+    (string-append "\t" (symbol->string op) "\t" (print-instr q) "\n")]
    [`(callq ,func)
     (string-append "\tcallq\t" (symbol->string func) "\n")]
    [`(,op ,lbl) #:when(member op '(je jmp))
@@ -69,12 +104,12 @@
    [`(global-value ,v)
     (string-append (symbol->string v) "(%rip)")]
    [`(pushq ,v)
-    (string-append "\tpushq\t" (print-x86^ v) "\n")]
+    (string-append "\tpushq\t" (print-instr v) "\n")]
    [`(popq ,v)
-    (string-append "\tpopq\t" (print-x86^ v) "\n")]
+    (string-append "\tpopq\t" (print-instr v) "\n")]
    [`(function-ref ,label)
-    (string-append (symbol->string label) "%(rip)")]
+    (string-append (symbol->string label) "(%rip)")]
    [`(indirect-callq ,q)
-    (string-append "\tcallq\t*" (print-x86^ q) "\n")]
+    (string-append "\tcallq\t*" (print-instr q) "\n")]
    [`(stack-arg ,i)
     (string-append (number->string i) "%(rsp)")]))
