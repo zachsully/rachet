@@ -235,37 +235,42 @@ void cheney(int64_t** rootstack_ptr)
   free_ptr = tospace_begin;
 
   // FIRST, copy rootstack pointers into tospace
-  for(unsigned int i = 0; rootstack_begin + i < rootstack_ptr; i++){
-    int64_t* a_root = rootstack_begin[i];
-    copy_vector(&a_root);
-    /*
-       keep in mind that free_ptr is always pointing to the next free space in
-       memory
-    */
-  }
-
-
-  // NEXT, a breadth first copy of of the elements in the fromspace
-  int64_t* scan_ptr = tospace_begin;
-  while(scan_ptr != free_ptr){
-
-
-    int64_t bitmask = get_ptr_bitfield(*scan_ptr);
-    int vec_length = get_length(*scan_ptr);
-
-    // find out which elements are vectors
-    for(unsigned int i = 0; i < vec_length; i++){
-      bitmask = bitmask >> i;
-      if((bitmask & 1) == 1){
-	copy_vector((int64_t**)scan_ptr[++i]);
-	/*
-	  keep in mind that free_ptr is always pointing to the next free space
-	  in memory
-	*/
-      }
+  for(unsigned int i = 0; rootstack_begin + i < rootstack_ptr; i++)
+    {
+      int64_t* a_root = rootstack_begin[i];
+      copy_vector(&a_root);
+      /*
+	keep in mind that free_ptr is always pointing to the next free space in
+	memory
+      */
     }
-    scan_ptr += vec_length + 1;
-  }
+
+
+  // NEXT, a breadth first copy of of the elements in the fromspace_begin
+  int64_t* scan_ptr = tospace_begin;
+  while(scan_ptr != free_ptr)
+    {
+      int64_t tag = *scan_ptr;
+      int64_t ptr_bitfield = get_ptr_bitfield(tag);
+      unsigned char vec_length = get_length(tag);
+      int64_t* data = scan_ptr + 1;
+
+      scan_ptr = scan_ptr + vec_length + 1;
+
+      // find out which elements are vectors
+      for(unsigned int i = 0; i < vec_length; i++)
+  	{
+  	  if((ptr_bitfield >> i) & 1)
+  	    {
+  	      copy_vector((int64_t**) data[i]);
+  	      /*
+  		keep in mind that free_ptr is always pointing to next free space
+  		in memory
+  	      */
+  	    }
+  	}
+    }
+
 
   // FINALLY, flip tospace and fromspace
   int64_t* flip_begin_tmp;
@@ -336,23 +341,22 @@ void cheney(int64_t** rootstack_ptr)
 */
 void copy_vector(int64_t** vector_ptr_loc)
 {
-  if(!is_forwarding((*vector_ptr_loc)[0])){
+  if(!is_forwarding(**vector_ptr_loc)){
 
-    int copy_length = get_length((*vector_ptr_loc)[0]) + 1;
-    int current = 0;
+    int vec_length = get_length(**vector_ptr_loc);
 
-    while (copy_length > 0) {
-      *free_ptr = (*vector_ptr_loc)[current];
-
+    for (int i = 1; i < vec_length + 1; i++) {
+      *free_ptr = (*vector_ptr_loc)[i];
       free_ptr++;
-      current++;
-      copy_length--;
     }
 
     *vector_ptr_loc[0] = *vector_ptr_loc[0] | TAG_IS_NOT_FORWARD_MASK;
-    vector_ptr_loc = (int64_t**) (free_ptr - (copy_length * (sizeof(int64_t))));
+    *vector_ptr_loc = (int64_t*) (free_ptr - vec_length);
+
   } else {
+
     // move the to the forwarding pointer
+    *vector_ptr_loc = (int64_t*) **vector_ptr_loc;
   }
 }
 

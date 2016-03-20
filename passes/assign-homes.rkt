@@ -39,8 +39,10 @@
     (let ([x^ (hash-ref reg-map x #f)]
           [y^ (hash-ref reg-map y #f)])
       (cond
-       ;; [(and (equal? x^ #f) (equal? y^ #f))
-       ;;  `((,op (,typex ,x)) (offset (,typey ,y) ,i))]
+       ;;
+       [(and (equal? x^ #f) (equal? y^ #f))
+        `((,op (,typex ,x)) (offset (,typey ,y) ,i))]
+       ;;
        [(equal? x^ #f)
        	`(,op (,typex ,x) (offset ,y^ ,i))]
        [(equal? y^ #f) `(,op ,x^ (,typey ,y))]

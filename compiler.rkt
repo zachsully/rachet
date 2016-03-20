@@ -50,9 +50,9 @@
 ;; (compiler-tests "r1a-passes" typecheck r4-passes "r1a" (range 1 9))
 ;; (compiler-tests "r2-passes" typecheck r4-passes "r2" (range 1 24))
 ;; (compiler-tests "r3-passes" typecheck r4-passes "r3" (range 1 16))
-(compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 20))
+;; (compiler-tests "r4-passes" typecheck r4-passes "r4" (range 1 20))
 
-(newline) (display "tests passed!") (newline)
+;; (newline) (display "tests passed!") (newline)
 
 ;;;;;
 ;;;;; UNIT TESTING
@@ -64,34 +64,35 @@
 			   ;; (display "  =>") (newline)
 			   out)) p passes)))
 
-;; (compile-prog
-;;  `(program
-;;    (define (add [x : Integer]
-;;  		[y : Integer])
-;;      : Integer (+ x y))
-;;    (add 40 2))
+(compile-prog
+ `(program
+(define (big [a : Integer] [b : Integer] [c : Integer] [d : Integer] [e : Integer] 
+             [f : Integer] [g : Integer] [h : Integer] [i : Integer] [j : Integer]) : Integer
+        (+ d j))
+(big 1 2 3 20 5 6 7 8 9 22) 
+   )
 
-;;  ;; `(program
-;;  ;;   (let ([v (vector (vector 42) 21)])
-;;  ;;     (vector-ref (vector-ref v 0) 0))
-;;  ;;   )
+ ;; `(program
+ ;;   (let ([v (vector (vector 42) 21)])
+ ;;     (vector-ref (vector-ref v 0) 0))
+ ;;   )
 
 
-;;  `(,typecheck
-;;    ,uniquify
-;;    ,reveal-functions
-;;    ,flatten
-;;    ,expose-allocation
-;;    ,uncover-call-live-roots
-;;    ,select-instructions
-;;    ,uncover-live
-;;    ,build-interference
-;;    ,allocate-registers
-;;    ,assign-homes
-;;    ,lower-conditionals
-;;    ,patch-instructions
-;;    ,print-x86
-;;    ,display
-;;    ;; ,pretty-print
-;;    )
-;; )
+ `(,typecheck
+   ,uniquify
+   ,reveal-functions
+   ,flatten
+   ,expose-allocation
+   ,uncover-call-live-roots
+   ,select-instructions
+   ,uncover-live
+   ,build-interference
+   ,allocate-registers
+   ,assign-homes
+   ,lower-conditionals
+   ,patch-instructions
+   ,print-x86
+   ,display
+   ;; ,pretty-print
+   )
+)

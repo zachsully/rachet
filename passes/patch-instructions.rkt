@@ -35,19 +35,12 @@
     `((movq (int ,x) (reg rax))
       (,op ,var1 (reg rax)))]
 
-
-
    ;; >>  Moving something from the stack to a vec, when vec is on the stack  <<
    [`(movq (stack ,a) (offset (stack ,b-loc) ,j))
     `((pushq (stack ,a))
       (movq (stack ,b-loc) (reg rax))
       (popq (offset (reg rax) ,j)))]
 
-   ;; (movq (stack -16) (offset (stack -8) 8))
-   ;; = >
-   ;; pushq -16(%rbp)
-   ;; movq -8(%rbp), %rax
-   ;; popq 8(%rax)
 
    [`(movq (offset (stack ,a-loc) ,i) (stack ,b))
     `((pushq (stack ,a-loc))
