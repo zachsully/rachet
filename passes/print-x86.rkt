@@ -112,4 +112,4 @@
    [`(indirect-callq ,q)
     (string-append "\tcallq\t*" (print-instr q) "\n")]
    [`(stack-arg ,i)
-    (string-append (number->string i) "%(rsp)")]))
+    (string-append (number->string i) "(%rsp)")]))

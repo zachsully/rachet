@@ -24,9 +24,6 @@
      (let ([instr     (car data)]
 	   [after-set (cdr data)])
        (match instr
-	 [`(,_ ,_ (stack-arg ,_)) (void)]
-	 [`(,_ (stack-arg ,_) ,_) (void)]
-
 	 ;; free ptr is manage by c runtime
 	 [`(movq (global-value free_ptr) (,loc ,dst))
 	  #:when (not (eq? loc 'stack-arg))
@@ -37,10 +34,18 @@
 	 [`(addq (,_ ,src) (global-value free_ptr)) (void)]
 	 ;; free ptr
 
+	 [`(,_ ,_ (stack-arg ,_)) (void)]
+	 [`(,_ (stack-arg ,_) (,_ ,dst))
+	  (set-map (set-subtract after-set (set dst))
+		   (lambda (live-after)
+		     (add-edge graph dst live-after)))]
+
+
          [`(movq (int ,_) (,_ ,dst))
 	  (set-map (set-subtract after-set (set dst))
 		   (lambda (live-after)
 		     (add-edge graph dst live-after)))]
+
 
 	 [`(,op (,_ ,src) (,_ ,dst))
 	  #:when (member op '(movq movzbq))
