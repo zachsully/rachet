@@ -110,7 +110,7 @@
 	  [lt       (gensym "lt.")])
       `((movq (global-value free_ptr) (var ,end-data))
 	(addq (int ,bytes) (var ,end-data))
-	(cmpq (var ,end-data) (global-value fromspace_end))
+	(cmpq (global-value fromspace_end) (var ,end-data))
 	(setl (byte-reg al))
 	(movzbq (byte-reg al) (var ,lt))
 	(if (eq? (int 0) (var ,lt))
