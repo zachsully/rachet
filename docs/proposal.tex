@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage[margin=1.4in]{geometry}
+\usepackage{amsmath}
+\usepackage{verbatim}
+\linespread{1.15}
+
+\begin{document}
+\begin{center}
+  {\huge Proposal}\\
+  \vspace{0.1in}
+  Zach Sullivan and Gordon Lin
+  \vspace{0.2in}
+\end{center}
+
+\section*{Parametric Polymorphism}
+
+We will add parametric polymorphism to our R5 language, which allows us to be
+more expressive when describing types of functions. Instead of using just our
+just concrete types like Integer, we can now use type variables when defining
+functions and lambdas.
+
+Our milestones will be the following: type-checking and moving the code through
+the compiler. If time permits, we could implement user defined data-types.
+
+\subsection*{Grammar}
+\begin{align*}
+  type &::= {\rm Boolean \mid Integer \mid (Vector}\ type^+) \mid
+         {\rm Void} \mid (type^* \to type) \mid {\bf tvar}\\
+  expr  &::= int \mid var \mid \#f \mid \#t \mid (read) \mid (void)
+          \mid (-\ expr) \mid (+\ expr\ expr)\\
+        &\ \ \mid({\rm let}\ ([var\ expr])\ expr) \mid ({\rm and}\ expr\ expr)
+          \mid ({\rm or}\ expr\ expr)\\
+        &\ \ \mid ({\rm vector}\ expr^+)
+          \mid ({\rm vector\textrm{-}ref}\ expr\ expr)
+          \mid ({\rm vector\textrm{-}set!}\ expr\ expr\ expr)\\
+        &\ \ \mid (expr\ expr^*) \mid ({\rm lambda}\ (var^*)\ expr)\\
+  defs  &::= ({\rm define}\ (var\ [var\ :\ type]^*)\ : type\ expr)\\
+  R_{5.00295} &::= {\rm (program\ } defs^*\ expr)
+\end{align*}
+
+% We have a new a new polymorphic type call {\it tvar}
+
+\subsection*{Examples}
+\begin{verbatim}
+
+  (define (id [x : a]) : a x)
+  (id (if (id #f)
+          0
+          42))
+  > 42
+-------------------------------------------------------
+
+
+  (define (swap [v : (Vector a b)]) : (Vector b a)
+    (vector (vector-ref v 1) (vector-ref v 0)))
+  (vector-ref (swap (vector #t 42)) 0)
+  > 42
+-------------------------------------------------------
+\end{verbatim}
+\end{document}
