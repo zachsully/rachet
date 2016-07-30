@@ -10,9 +10,6 @@ Our typed language handles
 * mutateable tuples called vectors
 * functions
 * lambdas (buggy)
-
-And coming soon:
-* dynamic types
 * parametric polymorphism
 
 ### For Running and Testing
